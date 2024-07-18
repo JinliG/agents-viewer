@@ -109,6 +109,11 @@ export default function ChatMessages(props: ChatMessageProps) {
 				index === streamMessages.length - 1 &&
 				assistantStreamMessages.length > 0
 			) {
+				/**
+				 * because of coze /v3/chat insert an additional message which includes the full answer
+				 * so stream handler have to remove it
+				 */
+				assistantStreamMessages.pop();
 				list.push({
 					role: BotMessageRole.Assistant,
 					messages: assistantStreamMessages,
