@@ -1,0 +1,30 @@
+{
+	"manifest_version": 3,
+	"version": "0.0.1",
+	"email": "jinli.regret@gmail.com",
+	"name": "DEV | Agents Viewer(Provide professional, vertical agent services)",
+	"description": "Using side-panel API in an extension",
+	"icons": {
+		"16": "assets/16x16.png",
+		"32": "assets/32x32.png",
+		"48": "assets/48x48.png",
+		"64": "assets/64x64.png",
+		"128": "assets/128x128.png"
+	},
+	"action": {
+		"title": "打开 Agents Viewer",
+		"default_icon": {
+			"16": "assets/16x16.png",
+			"32": "assets/32x32.png",
+			"48": "assets/48x48.png",
+			"64": "assets/64x64.png",
+			"128": "assets/128x128.png"
+		}
+	},
+	"background": {
+		"service_worker": "service-worker.ts"
+	},
+	"side_panel": { "default_path": "index.html" },
+	"permissions": ["sidePanel"],
+	"host_permissions": ["https://*/*"]
+}

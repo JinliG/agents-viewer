@@ -1,0 +1,46 @@
+{
+	"name": "agents-viewer",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "tsc -b && vite build",
+		"dev-crx": "vite --config vite.crx.config.ts",
+		"build-crx": "vite build --config vite.crx.config.ts",
+		"lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+		"preview": "vite preview"
+	},
+	"dependencies": {
+		"@uiw/react-markdown-preview": "^5.1.2",
+		"ai": "^3.2.5",
+		"antd": "^5.18.3",
+		"axios": "^1.7.2",
+		"classnames": "^2.5.1",
+		"less": "^4.2.0",
+		"lodash": "^4.17.21",
+		"react": "^18.3.1",
+		"react-dom": "^18.3.1",
+		"react-router-dom": "^6.25.0",
+		"react-toastify": "^10.0.5"
+	},
+	"devDependencies": {
+		"@crxjs/vite-plugin": "^2.0.0-beta.25",
+		"@types/antd": "^1.0.0",
+		"@types/axios": "^0.14.0",
+		"@types/chrome": "^0.0.268",
+		"@types/lodash": "^4.17.5",
+		"@types/node": "^20.14.11",
+		"@types/react": "^18.3.3",
+		"@types/react-dom": "^18.3.0",
+		"@typescript-eslint/eslint-plugin": "^7.15.0",
+		"@typescript-eslint/parser": "^7.15.0",
+		"@vitejs/plugin-react-swc": "^3.5.0",
+		"eslint": "^8.57.0",
+		"eslint-plugin-react-hooks": "^4.6.2",
+		"eslint-plugin-react-refresh": "^0.4.7",
+		"typescript": "^5.2.2",
+		"vite": "^5.3.4",
+		"vite-tsconfig-paths": "^4.3.2"
+	}
+}

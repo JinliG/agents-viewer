@@ -1,0 +1,67 @@
+@import '~/styles/variables.less';
+
+.layout {
+	height: 100%;
+	display: flex;
+
+	.main {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+
+		.title {
+			font-size: 24px;
+			font-weight: 500;
+			height: 48px;
+			line-height: 48px;
+			margin-left: 12px;
+		}
+
+		.comp {
+			position: relative;
+			flex: 1;
+		}
+	}
+
+	.sider {
+		width: 48px;
+		padding: 8px 0;
+		background-color: @bg-color;
+		display: flex;
+		justify-content: space-between;
+		flex-direction: column;
+
+		.features {
+			display: flex;
+			gap: 12px;
+			flex-direction: column;
+			align-items: center;
+
+			.block {
+				padding: 6px;
+
+				&.active {
+					background-color: #fff;
+					border-radius: 6px;
+				}
+				.icon {
+					width: 24px;
+					height: 24px;
+				}
+
+				&:hover {
+					cursor: pointer;
+					background-color: #fff;
+					border-radius: 6px;
+				}
+			}
+		}
+
+		.setting {
+			display: flex;
+			gap: 12px;
+			flex-direction: column;
+			align-items: center;
+		}
+	}
+}

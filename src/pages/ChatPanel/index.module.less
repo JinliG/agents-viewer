@@ -1,0 +1,51 @@
+@import "~/styles/variables.less";
+
+.innerPadding {
+  padding: 4px 8px;
+}
+
+.chatPanel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: 0;
+  padding: 8px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 20px;
+
+  .messageContainer {
+    overflow-y: auto;
+  }
+
+  .inputContainer {
+    position: relative;
+
+    .inputArea {
+      border-bottom: unset;
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+
+      .innerPadding;
+    }
+
+    .innerTools {
+      border: @border-color 1px solid;
+      border-top: 0;
+      border-radius: 6px;
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+      display: flex;
+      justify-content: space-between;
+
+      .innerPadding;
+
+      .sendIcon {
+        align-self: flex-end;
+      }
+    }
+  }
+}
