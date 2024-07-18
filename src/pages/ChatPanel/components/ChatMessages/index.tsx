@@ -1,4 +1,3 @@
-import MarkdownPreview from '@uiw/react-markdown-preview';
 import type { Message } from 'ai/react';
 import { Avatar } from 'antd';
 import { forEach, isEmpty, map } from 'lodash';
@@ -6,9 +5,12 @@ import { useMemo } from 'react';
 
 import { useAuthContext } from '~/context/AuthContextProvider';
 import { useFeaturesContext } from '~/context/FeaturesContextProvider';
-import { BotMessageRole } from '~/type';
+import { BotMessageRole } from '~/types';
+import Markdown from 'react-markdown';
 
 import styles from './index.module.less';
+import remarkGfm from 'remark-gfm';
+import LoadingDots from '~/components/LoadingDots';
 
 /**
  * 支持的格式
@@ -19,7 +21,7 @@ import styles from './index.module.less';
 
 interface ChatMessageProps {
 	streamMessages: Message[];
-	streaming: boolean;
+	isWaitingAnswer: boolean;
 }
 
 interface BubbleProps {
@@ -35,18 +37,18 @@ function BubbleHeader(bubble: BubbleProps) {
 	const { role } = bubble;
 	const { userInfo } = useAuthContext();
 	const { currentFeature } = useFeaturesContext();
+	const { botAvatar } = currentFeature || {};
 
 	const avatar = useMemo(() => {
 		switch (role) {
 			case BotMessageRole.Assistant:
-				const { botAvatar } = currentFeature || {};
 				return <Avatar src={botAvatar} style={{ width: 24, height: 24 }} />;
 			case BotMessageRole.User:
 				return <Avatar size={24} src={userInfo?.avatar} />;
 			default:
 				return null;
 		}
-	}, [role, currentFeature]);
+	}, [role]);
 
 	return <div className={styles.header}>{avatar}</div>;
 }
@@ -58,24 +60,26 @@ function ChatMessageBubble(props: ChatMessageBubbleProps) {
 	return (
 		<div className={styles.bubble}>
 			<BubbleHeader {...bubble} />
-			<MarkdownPreview
-				className={styles.markdown}
-				source={map(messages, (item) => item.content).join('')}
-			/>
+			<Markdown className={styles.markdown} remarkPlugins={[remarkGfm]}>
+				{map(messages, (item) => item.content).join('')}
+			</Markdown>
 		</div>
 	);
 }
 
-export default function ChatMessageItem(props: ChatMessageProps, ref) {
-	const { streamMessages } = props;
+export default function ChatMessages(props: ChatMessageProps) {
+	const { streamMessages, isWaitingAnswer } = props;
 
 	if (isEmpty(streamMessages)) {
 		return null;
 	}
 
+	console.log('--- isWaitingAnswer', isWaitingAnswer);
+
 	const bubbleList = useMemo<Array<BubbleProps>>(() => {
-		const list = [];
-		let assistantStreamMessages = [];
+		const list: Array<BubbleProps> = [];
+		let assistantStreamMessages: Message[] = [];
+		// 遍历流式消息，依据角色合并到消息气泡中
 		forEach(streamMessages, (message, index) => {
 			if (message.role === 'user') {
 				if (isEmpty(assistantStreamMessages)) {
@@ -120,6 +124,7 @@ export default function ChatMessageItem(props: ChatMessageProps, ref) {
 			{map(bubbleList, (bubble, index) => {
 				return <ChatMessageBubble key={index} bubble={bubble} />;
 			})}
+			{isWaitingAnswer && <LoadingDots />}
 		</div>
 	);
 }

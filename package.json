@@ -12,17 +12,19 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
-		"@uiw/react-markdown-preview": "^5.1.2",
 		"ai": "^3.2.5",
 		"antd": "^5.18.3",
 		"axios": "^1.7.2",
 		"classnames": "^2.5.1",
+		"framer-motion": "^11.3.6",
 		"less": "^4.2.0",
 		"lodash": "^4.17.21",
 		"react": "^18.3.1",
 		"react-dom": "^18.3.1",
+		"react-markdown": "^9.0.1",
 		"react-router-dom": "^6.25.0",
-		"react-toastify": "^10.0.5"
+		"react-toastify": "^10.0.5",
+		"remark-gfm": "^4.0.0"
 	},
 	"devDependencies": {
 		"@crxjs/vite-plugin": "^2.0.0-beta.25",

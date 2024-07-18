@@ -1,15 +1,15 @@
-import { SendOutlined } from '@ant-design/icons';
+import { SendOutlined, ClearOutlined } from '@ant-design/icons';
 import { useChat, type Message } from 'ai/react';
 import { Button, Form } from 'antd';
 import TextArea from 'antd/es/input/TextArea';
-import { groupBy, uniqueId } from 'lodash';
+import { groupBy, isEmpty, uniqueId } from 'lodash';
 import { useState, type FormEvent } from 'react';
 
 import { cozeApiChat, cozeBase, cozeHost } from '~/network/coze/apis';
 import type { ChatMessage, ChatReq, MessageType } from '~/types/coze';
 import { convertInputToEnterMessage, parseMultiJson } from '~/utils';
 
-import ChatMessageItem from './components/ChatMessageItem';
+import ChatMessages from './components/ChatMessages';
 import styles from './index.module.less';
 
 function getContentId(str: string) {
@@ -22,7 +22,7 @@ interface ChatPanelProps {
 
 export default function ChatPanel(props: ChatPanelProps) {
 	const { botId } = props;
-	const [streaming, setStreaming] = useState(false);
+	const [isWaitingAnswer, setIsWaitingAnswer] = useState(false);
 	const [messageCards, setMessageCards] = useState<any[]>([]);
 
 	const {
@@ -32,11 +32,14 @@ export default function ChatPanel(props: ChatPanelProps) {
 		input,
 		handleInputChange,
 		isLoading,
+		stop: stopStream,
 	} = useChat({
+		streamMode: 'text',
 		api: cozeBase + cozeApiChat,
 		// 使用 useChat 的钩子并自定义处理可读流逻辑
 		onResponse: (response) => {
-			setStreaming(true);
+			setIsWaitingAnswer(true);
+			// 合并之前的 streamMessages
 			let bufferMessages: Message[] = [
 				...streamMessages,
 				{
@@ -56,15 +59,19 @@ export default function ChatPanel(props: ChatPanelProps) {
 						}
 						const chunk = new TextDecoder().decode(value);
 						const list = parseMultiJson(chunk);
-						console.log('--- list', list);
 						const groupedByType = groupBy(list, (item) => item?.type);
+						console.log('--- typed messages', groupedByType);
 						const { answer = [], ...rest } = groupedByType as {
 							[key in MessageType]: ChatMessage[];
 						};
 
+						if (isWaitingAnswer && !isEmpty(answer)) {
+							setIsWaitingAnswer(false);
+						}
+
 						setMessageCards((state) => [...state, rest]);
 						bufferMessages = bufferMessages.concat(
-							answer.map(({ content, chat_id, role }, i) => ({
+							answer.map(({ content, chat_id, role }) => ({
 								id: chat_id,
 								role,
 								content: content as string,
@@ -78,14 +85,13 @@ export default function ChatPanel(props: ChatPanelProps) {
 						console.error('reader error ', e);
 					})
 					.finally(() => {
-						setStreaming(false);
+						setIsWaitingAnswer(false);
 					});
 			return push();
 		},
 		onError(error) {
 			console.error(error);
 		},
-		streamMode: 'text',
 	});
 
 	async function sendMessage(e: FormEvent<HTMLFormElement>) {
@@ -114,12 +120,19 @@ export default function ChatPanel(props: ChatPanelProps) {
 		});
 	}
 
+	const clearMessages = () => {
+		stopStream();
+		setStreamMessages([]);
+	};
+
+	// console.log('--- isWaitingAnswer', isWaitingAnswer, streamMessages);
+
 	return (
 		<div className={styles.chatPanel}>
 			<div className={styles.messageContainer}>
-				<ChatMessageItem
+				<ChatMessages
 					streamMessages={streamMessages}
-					streaming={streaming}
+					isWaitingAnswer={isWaitingAnswer}
 				/>
 			</div>
 			<div className={styles.inputContainer}>
@@ -137,7 +150,11 @@ export default function ChatPanel(props: ChatPanelProps) {
 					}}
 				/>
 				<div className={styles.innerTools}>
-					<div></div>
+					<Button
+						type='text'
+						onClick={clearMessages}
+						icon={<ClearOutlined />}
+					/>
 					<Form onSubmitCapture={sendMessage}>
 						<Button
 							htmlType='submit'
