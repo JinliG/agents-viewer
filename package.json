@@ -6,8 +6,10 @@
 	"scripts": {
 		"dev": "vite",
 		"build": "tsc -b && vite build",
-		"dev-crx": "vite --config vite.crx.config.ts",
-		"build-crx": "vite build --config vite.crx.config.ts",
+		"dev.crx": "vite --config vite.crx.config.ts",
+		"build.crx": "vite build --config vite.crx.config.ts",
+		"dev.pwa": "vite --config vite.pwa.config.ts",
+		"build.pwa": "tsc -b && vite build --config vite.pwa.config.ts",
 		"lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
 		"preview": "vite preview"
 	},

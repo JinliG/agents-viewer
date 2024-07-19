@@ -1,0 +1,21 @@
+{
+	"name": "DEV | Agents Viewer(Provide professional, vertical agent services)",
+	"short_name": "Agents Viewer",
+	"description": "DEV | Agents Viewer(Provide professional, vertical agent services)",
+	"theme_color": "#242424",
+	"background_color": "#ffffff",
+	"scope": "/",
+	"start_url": "./",
+	"icons": [
+		{
+			"src": "assets/192x192.png",
+			"sizes": "192x192",
+			"type": "image/png"
+		},
+		{
+			"src": "assets/512x512.png",
+			"sizes": "512x512",
+			"type": "image/png"
+		}
+	]
+}

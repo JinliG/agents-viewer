@@ -54,6 +54,7 @@ export default function ChatPanel(props: ChatPanelProps) {
 					?.read()
 					.then(({ done, value }) => {
 						if (done === true) {
+							setIsWaitingAnswer(false);
 							console.log('--- 读取完毕', bufferMessages);
 							return;
 						}
@@ -64,10 +65,6 @@ export default function ChatPanel(props: ChatPanelProps) {
 						const { answer = [], ...rest } = groupedByType as {
 							[key in MessageType]: ChatMessage[];
 						};
-
-						if (isWaitingAnswer && !isEmpty(answer)) {
-							setIsWaitingAnswer(false);
-						}
 
 						setMessageCards((state) => [...state, rest]);
 						bufferMessages = bufferMessages.concat(
@@ -83,8 +80,6 @@ export default function ChatPanel(props: ChatPanelProps) {
 					})
 					.catch((e) => {
 						console.error('reader error ', e);
-					})
-					.finally(() => {
 						setIsWaitingAnswer(false);
 					});
 			return push();

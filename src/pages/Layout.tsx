@@ -13,7 +13,6 @@ const Layout: React.FC<any> = () => {
 	const { features, setCurrentFeature, currentFeature } = useFeaturesContext();
 	const { userInfo } = useAuthContext();
 
-	console.log('--- features', features, currentFeature);
 	const { Comp, name, botId } = currentFeature || {};
 
 	return (
