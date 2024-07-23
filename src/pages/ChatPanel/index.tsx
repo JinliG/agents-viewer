@@ -5,7 +5,7 @@ import TextArea from 'antd/es/input/TextArea';
 import { groupBy, isEmpty, uniqueId } from 'lodash';
 import { useState, type FormEvent } from 'react';
 
-import { cozeApiChat, cozeBase, cozeHost } from '~/network/coze/apis';
+import { cozeApiChat, cozeBase, cozeHost } from '~/network/coze';
 import type { ChatMessage, ChatReq, MessageType } from '~/types/coze';
 import { convertInputToEnterMessage, parseMultiJson } from '~/utils';
 

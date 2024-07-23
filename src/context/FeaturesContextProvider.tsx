@@ -1,7 +1,7 @@
 import { map } from 'lodash';
 import React, { useEffect, useState } from 'react';
 
-import { getBotList } from '~/network/coze/apis';
+import { getBotList } from '~/network/coze';
 import ChatPanel from '~/pages/ChatPanel';
 import { FeaturesContext } from '.';
 import { Feature } from './types';

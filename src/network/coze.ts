@@ -1,4 +1,4 @@
-import { createAxiosInstance } from '~/network';
+import { createAxiosInstance } from '~/network/instance';
 import type {
 	Conversation,
 	CozeAPIResponse,
