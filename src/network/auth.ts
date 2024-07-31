@@ -1,6 +1,6 @@
 import { createAxiosInstance } from '~/network/instance';
 
-const { get, post } = createAxiosInstance(process.env.VITE_CMS_BASE, {
+const { get, post } = createAxiosInstance(import.meta.env.VITE_CMS_BASE, {
 	// headers: {
 	// 	Authorization: `Bearer ${import.meta.env.VITE_COZE_API_KEY}`,
 	// },
@@ -30,18 +30,19 @@ interface LoginRes {
 }
 
 const userApiPath = '/api/customers';
+const accessTokenKey = 'avr_access_token';
 
 class AuthService {
 	storeToken = (token: string) => {
-		localStorage.setItem('access_token', token);
+		localStorage.setItem(accessTokenKey, token);
 	};
 
 	removeToken = () => {
-		localStorage.removeItem('access_token');
+		localStorage.removeItem(accessTokenKey);
 	};
 
 	getToken = () => {
-		return localStorage.getItem('access_token');
+		return localStorage.getItem(accessTokenKey);
 	};
 	register = (params: RegisterParams) => {
 		return post<RegisterRes>(`${userApiPath}`, params);

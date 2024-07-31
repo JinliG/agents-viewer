@@ -1,6 +1,6 @@
 import { isNil } from 'lodash';
 import React, { useEffect, useState } from 'react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Navigate, Route, Routes } from 'react-router-dom';
 import AuthContextProvider from '~/context/AuthContextProvider';
 import FeaturesContextProvider from '~/context/FeaturesContextProvider';
 import auth from '~/network/auth';
@@ -14,12 +14,21 @@ export default function Router() {
 	useEffect(() => {
 		const accessToken = auth.getToken();
 		if (accessToken) {
-			auth.verifyToken().then((res) => {
-				console.log('--- res', res);
-				setIsAuthenticated(true);
-			});
+			auth
+				.verifyToken()
+				.then((res) => {
+					console.log('--- res', res);
+					setIsAuthenticated(true);
+				})
+				.catch(() => {
+					setIsAuthenticated(false);
+				});
+		} else {
+			setIsAuthenticated(false);
 		}
 	}, []);
+
+	console.log('--- isAuthenticated', isAuthenticated);
 
 	if (isNil(isAuthenticated)) {
 		return null;
@@ -30,13 +39,14 @@ export default function Router() {
 			<FeaturesContextProvider>
 				<MemoryRouter>
 					<Routes>
-						{isAuthenticated ? (
-							<>
-								<Route path='/' element={<Layout />} />
-							</>
-						) : (
-							<Login />
-						)}
+						<Route
+							path='/'
+							index
+							element={
+								isAuthenticated ? <Layout /> : <Navigate to='/login' replace />
+							}
+						/>
+						<Route path='/login' element={<Login />} />
 					</Routes>
 				</MemoryRouter>
 			</FeaturesContextProvider>
