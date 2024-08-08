@@ -1,5 +1,6 @@
 import axios, {
 	AxiosError,
+	AxiosRequestConfig,
 	type AxiosInstance,
 	type AxiosResponse,
 	type CreateAxiosDefaults,
@@ -7,8 +8,16 @@ import axios, {
 
 interface AxiosAPIs {
 	instance: AxiosInstance;
-	post: <T = any>(url: string, data?: any) => Promise<T>;
-	get: <T = any>(url: string, params?: any) => Promise<T>;
+	post: <T = any>(
+		url: string,
+		data?: any,
+		options?: AxiosRequestConfig
+	) => Promise<T>;
+	get: <T = any>(
+		url: string,
+		params?: any,
+		options?: AxiosRequestConfig
+	) => Promise<T>;
 }
 
 /**
@@ -72,13 +81,21 @@ export function createAxiosInstance(
 		}
 	);
 
-	const get = <T = any>(url: string, params?: any): Promise<T> => {
-		return instance.get(url, { params });
+	const get = <T = any>(
+		url: string,
+		params?: any,
+		options?: AxiosRequestConfig
+	): Promise<T> => {
+		return instance.get(url, { ...options, params });
 	};
 
 	// 封装 POST 请求
-	const post = <T = any>(url: string, data?: any): Promise<T> => {
-		return instance.post(url, data);
+	const post = <T = any>(
+		url: string,
+		data?: any,
+		options?: AxiosRequestConfig
+	): Promise<T> => {
+		return instance.post(url, data, options);
 	};
 
 	return {

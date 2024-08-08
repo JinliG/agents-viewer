@@ -4,15 +4,22 @@ import React, { useEffect, useState } from 'react';
 import { getBotList } from '~/network/coze';
 import ChatPanel from '~/pages/ChatPanel';
 import { FeaturesContext } from '.';
-import { Feature } from './types';
 
-const defaults: Feature[] = [];
+export interface IFeature {
+	key: string;
+	name: string;
+	icon: string;
+	botId?: string;
+	botAvatar?: string;
+	Comp: (props?: any) => React.JSX.Element;
+}
 
 export const useFeaturesContext = () => React.useContext(FeaturesContext);
 
+const defaults: IFeature[] = [];
 const FeaturesContextProvider: React.FC<any> = ({ children }) => {
-	const [features, setFeatures] = useState<Feature[]>([]);
-	const [currentFeature, setCurrentFeature] = useState<Feature | null>(null);
+	const [features, setFeatures] = useState<IFeature[]>([]);
+	const [currentFeature, setCurrentFeature] = useState<IFeature | null>(null);
 	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {

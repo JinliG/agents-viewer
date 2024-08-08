@@ -5,7 +5,9 @@ import { map } from 'lodash';
 import React from 'react';
 
 import { useAuthContext } from '~/context/AuthContextProvider';
-import { useFeaturesContext } from '~/context/FeaturesContextProvider';
+import FeaturesContextProvider, {
+	useFeaturesContext,
+} from '~/context/FeaturesContextProvider';
 
 import styles from './Layout.module.less';
 
@@ -51,4 +53,9 @@ const Layout: React.FC<any> = () => {
 		</div>
 	);
 };
-export default Layout;
+
+export default (props) => (
+	<FeaturesContextProvider>
+		<Layout {...props} />
+	</FeaturesContextProvider>
+);

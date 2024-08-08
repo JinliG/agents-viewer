@@ -1,20 +1,21 @@
 import axios from 'axios';
 import queryString from 'query-string';
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
+import { useAuthContext } from '~/context/AuthContextProvider';
+import auth from '~/network/auth';
 
-const googleAuthApi = 'https://accounts.google.com/o/oauth2/v2/auth';
 const googleTokenApi = 'https://oauth2.googleapis.com/token';
-
 const useGoogleAuth = (redirectUrl: string) => {
-	const { code, ...rest } = queryString.parse(location.search);
+	const { code } = queryString.parse(location.search);
+	const { loginCallback } = useAuthContext();
+	const currentRef = useRef(true);
 
 	useEffect(() => {
-		console.log('--- inside code', code, rest);
 		const { origin, pathname } = location;
-		if (code && origin + pathname === redirectUrl) {
-			console.log('--- handle redirect');
+		if (code && origin + pathname === redirectUrl && currentRef.current) {
+			currentRef.current = false;
 			axios
-				.post(googleTokenApi, {
+				.post<any>(googleTokenApi, {
 					client_id: import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID,
 					client_secret: import.meta.env.VITE_GOOGLE_WEB_CLIENT_SECRET,
 					code,
@@ -22,21 +23,24 @@ const useGoogleAuth = (redirectUrl: string) => {
 					redirect_uri: redirectUrl,
 				})
 				.then((res) => {
-					console.log('--- google', res);
-					// TODO: 区分注册登录和登录
+					if (res.data) {
+						auth.googleAuthCallback({ tokens: res.data }).then((res) => {
+							if (res.result) {
+								const { user, token } = res.result;
+								loginCallback(user, token);
+							}
+						});
+					}
 				});
 		}
 	}, [code]);
-	const startAuth = () => {
-		const params = {
-			client_id: import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID,
-			redirect_uri: redirectUrl,
-			response_type: 'code',
-			scope: 'https://www.googleapis.com/auth/userinfo.email',
-		};
 
-		console.log('--- jump', `${googleAuthApi}?${new URLSearchParams(params)}`);
-		window.open(`${googleAuthApi}?${new URLSearchParams(params)}`);
+	const startAuth = () => {
+		auth.googleAuth(redirectUrl).then((res) => {
+			if (res.authUrl) {
+				location.href = res.authUrl;
+			}
+		});
 	};
 
 	return {
