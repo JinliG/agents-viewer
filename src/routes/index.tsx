@@ -1,19 +1,28 @@
-import { isNil } from 'lodash';
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Navigate, Route } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import {
+	BrowserRouter,
+	HashRouter,
+	Routes,
+	Navigate,
+	Route,
+} from 'react-router-dom';
 import { useAuthContext } from '~/context/AuthContextProvider';
 import FeaturesContextProvider from '~/context/FeaturesContextProvider';
 import auth from '~/network/auth';
 
 import Layout from '~/pages/Layout';
 import Login from '~/pages/Login';
+import { isChromeExtension } from '~/utils';
 
 export default function Router() {
 	const { isLoggedIn, setUserInfo, setIsLoggedIn } = useAuthContext();
 
+	const Router = isChromeExtension() ? HashRouter : BrowserRouter;
+
 	useEffect(() => {
 		// 如果存在token，则验证用户认证
 		const accessToken = auth.getToken();
+		console.log('--- accessToken', accessToken);
 		if (accessToken) {
 			auth
 				.getCurrentUser()
@@ -28,9 +37,11 @@ export default function Router() {
 		}
 	}, []);
 
+	console.log('--- isLogin', isLoggedIn);
+
 	return (
 		<FeaturesContextProvider>
-			<BrowserRouter>
+			<Router>
 				<Routes>
 					{/* 未认证用户访问 / 时重定向到 /login */}
 					<Route
@@ -55,7 +66,7 @@ export default function Router() {
 						element={isLoggedIn ? <Navigate to='/layout' replace /> : <Login />}
 					/>
 				</Routes>
-			</BrowserRouter>
+			</Router>
 		</FeaturesContextProvider>
 	);
 }

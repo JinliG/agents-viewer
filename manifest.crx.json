@@ -4,6 +4,7 @@
 	"email": "jinli.regret@gmail.com",
 	"name": "DEV | Agents Viewer(Provide professional, vertical agent services)",
 	"description": "Using side-panel API in an extension",
+	"key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwF9Fh4EbifrSxynTVNNJabnW1fs+WOMdJ+o3Nkvw3EJU99xyC+envJHya9E/eKJMh37zJwCz3w33ZM3JPf0Re8icHZew6rHqw5AkzRUJj82Dn2wxzozJVn2tfRk0L0fSofsqKrFyf90AV9EgPTQXGLAnEId9W9jj7BV+P0QFptlVh3IGej6CcTxddaJBBL0/IQIyCJ1G0nXKGtxkJHgFzr9WOC6hR37PZ2froBNW/77G/4t48ch6SyJGDGauUmUUFcBMvnjBUpYJySDRHP3k9j/AI+i1OBYyk5YYZQB+5oOFOsgyZG8WJx0HAzYIPXpFAvACaUYwDpgF+buRoyqpCwIDAQAB",
 	"icons": {
 		"16": "assets/16x16.png",
 		"32": "assets/32x32.png",
@@ -22,9 +23,9 @@
 		}
 	},
 	"background": {
-		"service_worker": "service-worker.ts"
+		"service_worker": "./crx/service-worker.ts"
 	},
 	"side_panel": { "default_path": "index.html" },
-	"permissions": ["sidePanel"],
+	"permissions": ["sidePanel", "identity"],
 	"host_permissions": ["https://*/*"]
 }

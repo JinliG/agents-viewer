@@ -1,5 +1,6 @@
 import type { ChatMessage, EnterMessage } from '~/types/coze';
 
+// 将用户输入转换为 EnterMessage
 export function convertInputToEnterMessage(
 	message: string,
 	image?: any,
@@ -20,6 +21,7 @@ export function convertInputToEnterMessage(
 	return [];
 }
 
+// 格式化多模态消息
 export function formatAdditionalMessages(
 	additionalMessages: EnterMessage[] | undefined
 ): EnterMessage[] {
@@ -76,4 +78,15 @@ export function parseMultiJson(jsonStr: string): ChatMessage[] {
 	}
 
 	return jsonArr;
+}
+
+// 判断是否在 chrome 扩展中运行
+export function isChromeExtension(): boolean {
+	// 尝试获取 manifest
+	try {
+		window.chrome.runtime.getManifest();
+		return true;
+	} catch (error) {
+		return false;
+	}
 }

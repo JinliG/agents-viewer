@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AuthContext } from '.';
 import auth from '~/network/auth';
+import { isChromeExtension } from '~/utils';
 
 export interface IUserInfo {
 	id: number | string;
@@ -16,12 +17,7 @@ export const useAuthContext = () => React.useContext(AuthContext);
 
 const AuthContextProvider: React.FC<any> = ({ children }) => {
 	const [isLoggedIn, setIsLoggedIn] = useState(false);
-	const [userInfo, setUserInfo] = useState<IUserInfo>({
-		id: '',
-		name: '',
-		email: '',
-		avatar: 'https://s4.ax1x.com/2021/12/22/TQT3rj.png',
-	});
+	const [userInfo, setUserInfo] = useState<IUserInfo>();
 
 	useEffect(() => {
 		const storedUser = localStorage.getItem('user');
@@ -43,6 +39,7 @@ const AuthContextProvider: React.FC<any> = ({ children }) => {
 	};
 
 	const values = {
+		isChromeExtension: isChromeExtension(),
 		isLoggedIn,
 		userInfo,
 		setUserInfo,

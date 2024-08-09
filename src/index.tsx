@@ -5,14 +5,13 @@ import styles from './index.module.less';
 import 'react-toastify/dist/ReactToastify.css';
 
 import Router from './routes';
-
-function IndexSidePanel() {
+function IndexSider() {
 	return (
-		<div className={styles.sidePanel}>
+		<div className={styles.sider}>
 			<Router />
 			<ToastContainer />
 		</div>
 	);
 }
 
-export default IndexSidePanel;
+export default IndexSider;

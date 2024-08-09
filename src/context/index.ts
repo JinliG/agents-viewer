@@ -1,6 +1,7 @@
 import React from 'react';
 import { IFeature } from './FeaturesContextProvider';
 import { IUserInfo } from './AuthContextProvider';
+import { isChromeExtension } from '~/utils';
 
 /**
  * because of vite issue(https://github.com/vitejs/vite/issues/3301)
@@ -8,6 +9,7 @@ import { IUserInfo } from './AuthContextProvider';
  */
 export interface AuthContextProps {
 	isLoggedIn: boolean;
+	isChromeExtension: boolean;
 	userInfo: IUserInfo;
 	setUserInfo: (user: IUserInfo) => void;
 	setIsLoggedIn: (isLoggedIn: boolean) => void;
@@ -16,6 +18,7 @@ export interface AuthContextProps {
 }
 export const authInitState: AuthContextProps = {
 	isLoggedIn: false,
+	isChromeExtension: isChromeExtension(),
 	userInfo: {
 		id: '',
 		name: '',
