@@ -1,8 +1,8 @@
-import { SendOutlined, ClearOutlined } from '@ant-design/icons';
+import { SendOutlined, ClearOutlined, PlusOutlined } from '@ant-design/icons';
 import { useChat, type Message } from 'ai/react';
 import { Button, Form } from 'antd';
 import TextArea from 'antd/es/input/TextArea';
-import { groupBy, isEmpty, uniqueId } from 'lodash';
+import { groupBy, uniqueId } from 'lodash';
 import { useState, type FormEvent } from 'react';
 
 import { cozeApiChat, cozeBase, cozeHost } from '~/network/coze';
@@ -11,6 +11,7 @@ import { convertInputToEnterMessage, parseMultiJson } from '~/utils';
 
 import ChatMessages from './components/ChatMessages';
 import styles from './index.module.less';
+import Uploader from './components/Uploader';
 
 function getContentId(str: string) {
 	return encodeURIComponent(str).replace(/[.*+?^${}()|[\]\\]/g, '-');
@@ -150,14 +151,19 @@ export default function ChatPanel(props: ChatPanelProps) {
 						onClick={clearMessages}
 						icon={<ClearOutlined />}
 					/>
-					<Form onSubmitCapture={sendMessage}>
-						<Button
-							htmlType='submit'
-							type='text'
-							className={styles.sendIcon}
-							icon={<SendOutlined />}
-						/>
-					</Form>
+					<div className={styles.right}>
+						<Uploader>
+							<Button type='text' icon={<PlusOutlined />} />
+						</Uploader>
+						<Form onSubmitCapture={sendMessage}>
+							<Button
+								htmlType='submit'
+								type='text'
+								className={styles.sendIcon}
+								icon={<SendOutlined />}
+							/>
+						</Form>
+					</div>
 				</div>
 			</div>
 		</div>

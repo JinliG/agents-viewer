@@ -10,7 +10,9 @@ import { noop } from 'lodash';
 import useGoogleAuth from '~/hooks/useGoogleAuth';
 
 const Login: React.FC = () => {
-	const { startAuth } = useGoogleAuth(location.origin + location.pathname);
+	const { startAuth, loading: googleAuthorizing } = useGoogleAuth(
+		location.origin + location.pathname
+	);
 
 	return (
 		<div className={styles.loginPage}>
@@ -21,6 +23,7 @@ const Login: React.FC = () => {
 					type='primary'
 					onClick={noop}
 					icon={<MobileOutlined className={styles.icon} />}
+					disabled
 				>
 					Sign in with Phone
 				</Button>
@@ -30,6 +33,7 @@ const Login: React.FC = () => {
 					type='default'
 					onClick={startAuth}
 					icon={<GoogleCircleFilled className={styles.icon} />}
+					loading={googleAuthorizing}
 				>
 					Sign in with Google
 				</Button>
@@ -39,6 +43,7 @@ const Login: React.FC = () => {
 					type='default'
 					onClick={noop}
 					icon={<WechatFilled className={styles.icon} />}
+					disabled
 				>
 					Sign in with Wechat
 				</Button>

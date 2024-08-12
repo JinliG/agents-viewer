@@ -1,3 +1,4 @@
+import { isNil } from 'lodash';
 import React, { useEffect } from 'react';
 import {
 	BrowserRouter,
@@ -5,6 +6,7 @@ import {
 	Routes,
 	Navigate,
 	Route,
+	redirect,
 } from 'react-router-dom';
 import { useAuthContext } from '~/context/AuthContextProvider';
 import FeaturesContextProvider from '~/context/FeaturesContextProvider';
@@ -12,6 +14,7 @@ import auth from '~/network/auth';
 
 import Layout from '~/pages/Layout';
 import Login from '~/pages/Login';
+import NotFound from '~/pages/NotFound';
 import { isChromeExtension } from '~/utils';
 
 export default function Router() {
@@ -22,7 +25,6 @@ export default function Router() {
 	useEffect(() => {
 		// 如果存在token，则验证用户认证
 		const accessToken = auth.getToken();
-		console.log('--- accessToken', accessToken);
 		if (accessToken) {
 			auth
 				.getCurrentUser()
@@ -30,14 +32,23 @@ export default function Router() {
 					if (res.user) {
 						setUserInfo(res.user);
 						setIsLoggedIn(true);
+					} else {
+						auth.removeToken();
+						setIsLoggedIn(false);
+						redirect('/login');
 					}
 				})
-				.catch(() => {});
+				.catch((err) => {
+					console.error('--- ', err);
+				});
 		} else {
+			setIsLoggedIn(false);
 		}
 	}, []);
 
-	console.log('--- isLogin', isLoggedIn);
+	if (isNil(isLoggedIn)) {
+		return null;
+	}
 
 	return (
 		<FeaturesContextProvider>
@@ -55,16 +66,17 @@ export default function Router() {
 						}
 						index
 					/>
-					{isLoggedIn && (
-						<>
-							<Route path='/layout' element={<Layout />} />
-						</>
-					)}
 					{/* 已认证用户访问 /login 时重定向到 /layout */}
 					<Route
 						path='/login'
 						element={isLoggedIn ? <Navigate to='/layout' replace /> : <Login />}
 					/>
+					{isLoggedIn && (
+						<>
+							<Route path='/layout' element={<Layout />} />
+						</>
+					)}
+					<Route path='*' element={<NotFound />} />
 				</Routes>
 			</Router>
 		</FeaturesContextProvider>

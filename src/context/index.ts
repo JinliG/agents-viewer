@@ -8,7 +8,7 @@ import { isChromeExtension } from '~/utils';
  * have to separate the context file to another file
  */
 export interface AuthContextProps {
-	isLoggedIn: boolean;
+	isLoggedIn: null | boolean;
 	isChromeExtension: boolean;
 	userInfo: IUserInfo;
 	setUserInfo: (user: IUserInfo) => void;
@@ -17,7 +17,7 @@ export interface AuthContextProps {
 	logout: () => void;
 }
 export const authInitState: AuthContextProps = {
-	isLoggedIn: false,
+	isLoggedIn: null,
 	isChromeExtension: isChromeExtension(),
 	userInfo: {
 		id: '',

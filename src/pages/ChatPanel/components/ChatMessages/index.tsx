@@ -74,8 +74,6 @@ export default function ChatMessages(props: ChatMessageProps) {
 		return null;
 	}
 
-	console.log('--- isWaitingAnswer', isWaitingAnswer);
-
 	const bubbleList = useMemo<Array<BubbleProps>>(() => {
 		const list: Array<BubbleProps> = [];
 		let assistantStreamMessages: Message[] = [];

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import queryString from 'query-string';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAuthContext } from '~/context/AuthContextProvider';
 import auth from '~/network/auth';
 
@@ -9,6 +9,8 @@ const useGoogleAuth = (rUrl: string) => {
 	const { code } = queryString.parse(location.search);
 	const { loginCallback, isChromeExtension } = useAuthContext();
 	const currentRef = useRef(true);
+
+	const [loading, setLoading] = useState(false);
 
 	const redirectUrl = isChromeExtension
 		? import.meta.env.VITE_AUTH_CRX_REDIRECT_URL
@@ -32,12 +34,16 @@ const useGoogleAuth = (rUrl: string) => {
 						}
 					});
 				}
+			})
+			.finally(() => {
+				setLoading(false);
 			});
 	};
 
 	useEffect(() => {
 		const { origin, pathname } = location;
 		if (code && origin + pathname === redirectUrl && currentRef.current) {
+			setLoading(true);
 			currentRef.current = false;
 			handleAuth(code.toString());
 		}
@@ -45,6 +51,7 @@ const useGoogleAuth = (rUrl: string) => {
 
 	const handleAuthUrl = (url: string) => {
 		if (isChromeExtension) {
+			setLoading(true);
 			chrome.identity.launchWebAuthFlow(
 				{
 					url,
@@ -66,6 +73,7 @@ const useGoogleAuth = (rUrl: string) => {
 	};
 
 	const startAuth = () => {
+		setLoading(true);
 		auth.googleAuth(redirectUrl).then((res) => {
 			if (res.authUrl) {
 				handleAuthUrl(res.authUrl);
@@ -75,6 +83,7 @@ const useGoogleAuth = (rUrl: string) => {
 
 	return {
 		startAuth,
+		loading,
 	};
 };
 

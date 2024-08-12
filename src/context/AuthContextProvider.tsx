@@ -16,7 +16,7 @@ export interface IUserInfo {
 export const useAuthContext = () => React.useContext(AuthContext);
 
 const AuthContextProvider: React.FC<any> = ({ children }) => {
-	const [isLoggedIn, setIsLoggedIn] = useState(false);
+	const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 	const [userInfo, setUserInfo] = useState<IUserInfo>();
 
 	useEffect(() => {
@@ -27,7 +27,6 @@ const AuthContextProvider: React.FC<any> = ({ children }) => {
 	}, []);
 
 	const loginCallback = (user: IUserInfo, token: string) => {
-		console.log('--- user', user, token);
 		auth.storeToken(token);
 		setUserInfo(user);
 		setIsLoggedIn(true);

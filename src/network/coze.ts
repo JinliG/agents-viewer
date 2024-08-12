@@ -3,6 +3,7 @@ import type {
 	Conversation,
 	CozeAPIResponse,
 	EnterMessage,
+	FileInfo,
 	MetaDataType,
 	SimpleBot,
 } from '~/types/coze';
@@ -44,5 +45,20 @@ export const createConversation = (
 	return post<CozeAPIResponse<Conversation>>('/v1/conversation/create', {
 		messages,
 		meta_data,
+	});
+};
+
+/**
+ * 上传文件
+ * @param file
+ * @returns
+ */
+export const uploadFile = (file: File) => {
+	const formData = new FormData();
+	formData.append('file', file);
+	return post<CozeAPIResponse<FileInfo>>('/v1/files/upload', formData, {
+		headers: {
+			'Content-Type': 'multipart/form-data',
+		},
 	});
 };
