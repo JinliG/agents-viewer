@@ -1,3 +1,5 @@
+import { MultiModalType } from '.';
+
 /**
  * 创建消息时的附加消息，获取消息时也会返回此附加消息。
  *
@@ -55,10 +57,8 @@ export type MessageType =
 
 export type ObjectStringItem =
 	| { type: 'text'; text: string }
-	| { type: 'file'; file_id: string }
-	| { type: 'file'; file_url: string }
-	| { type: 'image'; file_id: string }
-	| { type: 'image'; file_url: string };
+	| { type: MultiModalType; file_id: string }
+	| { type: MultiModalType; file_url: string };
 
 export interface CozeAPIResponse<T> {
 	// 状态码 0 代表调用成功
@@ -384,7 +384,7 @@ export interface ChatMessage {
 	type: MessageType;
 }
 
-export interface FileInfo {
+export interface FileInfo extends File {
 	/**
 	 * 已上传的文件 ID。
 	 */
@@ -401,4 +401,8 @@ export interface FileInfo {
 	 * 文件名称。
 	 */
 	file_name: string;
+	/**
+	 * 文件类型。
+	 */
+	object_type: MultiModalType;
 }

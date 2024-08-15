@@ -3,6 +3,7 @@ import { Upload } from 'antd';
 import { uploadFile } from '~/network/coze';
 import { toast } from 'react-toastify';
 import { FileInfo } from '~/types/coze';
+import { MultiModalType } from '~/types';
 
 const allowedFileTypes = [
 	'.doc',
@@ -47,7 +48,7 @@ const Uploader: React.FC<UploaderProps> = ({ children, onUploadSuccess }) => {
 		// 文件大小验证
 		const isLt512M = file.size / 1024 / 1024 < 512;
 		if (!isLt512M) {
-			alert('文件大小不能超过 512MB!');
+			toast('文件大小不能超过 512MB!');
 			return false;
 		}
 
@@ -67,7 +68,17 @@ const Uploader: React.FC<UploaderProps> = ({ children, onUploadSuccess }) => {
 		uploadFile(options.file)
 			.then((response) => {
 				if (response.data) {
-					onUploadSuccess?.(response.data);
+					const { type } = options.file as File;
+					const object_type: MultiModalType = type
+						?.toLocaleLowerCase()
+						?.startsWith('image/')
+						? 'image'
+						: 'file';
+					onUploadSuccess?.({
+						type,
+						object_type,
+						...response.data,
+					});
 				}
 			})
 			.catch((error) => {

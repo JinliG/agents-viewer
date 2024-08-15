@@ -1,38 +1,31 @@
-import type { Message } from 'ai/react';
 import { Avatar } from 'antd';
-import { forEach, isEmpty, map } from 'lodash';
-import { useMemo } from 'react';
+import { forEach, groupBy, isEmpty, map } from 'lodash';
+import { useMemo, useState } from 'react';
 
 import { useAuthContext } from '~/context/AuthContextProvider';
 import { useFeaturesContext } from '~/context/FeaturesContextProvider';
-import { BotMessageRole } from '~/types';
+import { BotMessage, BotMessageRole } from '~/types';
 import Markdown from 'react-markdown';
 
 import styles from './index.module.less';
 import remarkGfm from 'remark-gfm';
 import LoadingDots from '~/components/LoadingDots';
+import { FileCard } from '../..';
 
 /**
  * 支持的格式
  * 1. 纯文本
- * 2. json
- * 3. markdown
+ * 2. markdown
  */
 
-interface ChatMessageProps {
-	streamMessages: Message[];
-	isWaitingAnswer: boolean;
-}
-
 interface BubbleProps {
+	id: string;
 	role: BotMessageRole;
-	messages: Message[];
+	messages: BotMessage[];
 }
-
 interface ChatMessageBubbleProps {
 	bubble?: BubbleProps;
 }
-
 function BubbleHeader(bubble: BubbleProps) {
 	const { role } = bubble;
 	const { userInfo } = useAuthContext();
@@ -53,18 +46,85 @@ function BubbleHeader(bubble: BubbleProps) {
 	return <div className={styles.header}>{avatar}</div>;
 }
 
+// 自定义 Img 组件
+const CustomImg = ({ src, alt, ...props }) => {
+	const [isZoomed, setIsZoomed] = useState(false);
+	const { isChromeExtension } = useAuthContext();
+
+	const handleZoom = () => {
+		if (isChromeExtension) {
+			window.open(src);
+		} else {
+			setIsZoomed(!isZoomed);
+		}
+	};
+
+	return (
+		<>
+			<img
+				className={styles.img}
+				src={src}
+				alt={alt}
+				onClick={handleZoom}
+				{...props}
+			/>
+			{isZoomed && (
+				<div className={styles.zoomOverlay}>
+					<img src={src} alt={alt} />
+					<button onClick={() => setIsZoomed(false)}>Close</button>
+				</div>
+			)}
+		</>
+	);
+};
+
 function ChatMessageBubble(props: ChatMessageBubbleProps) {
 	const { bubble } = props;
-	const { messages } = bubble || {};
+	let { messages, role } = bubble || {};
+	let multiModalMessages = [];
+
+	if (role === BotMessageRole.User) {
+		const { true: multiModalMsgs, false: textMsgs } = groupBy(
+			messages,
+			(item) => !isEmpty(item.multiModal)
+		);
+
+		messages = textMsgs;
+		multiModalMessages = multiModalMsgs;
+	}
 
 	return (
 		<div className={styles.bubble}>
 			<BubbleHeader {...bubble} />
-			<Markdown className={styles.markdown} remarkPlugins={[remarkGfm]}>
+			{!isEmpty(multiModalMessages) && (
+				<div className={styles.multiModalArea}>
+					{map(multiModalMessages, ({ multiModal }) => {
+						return (
+							<FileCard
+								className={styles.multiModalCard}
+								file={multiModal}
+								allowRemove={false}
+							/>
+						);
+					})}
+				</div>
+			)}
+			<Markdown
+				className={styles.markdown}
+				remarkPlugins={[remarkGfm]}
+				components={{
+					img: CustomImg,
+				}}
+			>
 				{map(messages, (item) => item.content).join('')}
 			</Markdown>
 		</div>
 	);
+}
+
+interface ChatMessageProps {
+	streamMessages: BotMessage[];
+	isWaitingAnswer: boolean;
 }
 
 export default function ChatMessages(props: ChatMessageProps) {
@@ -76,46 +136,43 @@ export default function ChatMessages(props: ChatMessageProps) {
 
 	const bubbleList = useMemo<Array<BubbleProps>>(() => {
 		const list: Array<BubbleProps> = [];
-		let assistantStreamMessages: Message[] = [];
-		// 遍历流式消息，依据角色合并到消息气泡中
+		let currentBubble: BubbleProps | null = null;
+		// 遍历流式消息，依据角色分别合并到消息气泡中
 		forEach(streamMessages, (message, index) => {
-			if (message.role === 'user') {
-				if (isEmpty(assistantStreamMessages)) {
-					list.push({
-						role: BotMessageRole.User,
-						messages: [message],
-					});
-				} else {
-					list.push(
-						{
-							role: BotMessageRole.Assistant,
-							messages: assistantStreamMessages,
-						},
-						{
-							role: BotMessageRole.User,
-							messages: [message],
-						}
-					);
-					assistantStreamMessages = [];
+			// 无 bubble 或角色&消息序列变化时，初始化 bubble
+			if (
+				!currentBubble ||
+				currentBubble.role !== message.role ||
+				currentBubble.id !== message.id
+			) {
+				// 收集 bubble
+				if (currentBubble) {
+					/**
+					 * 由于 coze /v3/chat 在最后一个 event 中追加了一个包含完整响应内容的消息
+					 * 所以这里必须手动移除
+					 */
+					if (currentBubble.role === BotMessageRole.Assistant) {
+						currentBubble.messages.pop();
+					}
+					list.push(currentBubble);
 				}
-			} else {
-				assistantStreamMessages.push(message);
+
+				currentBubble = {
+					id: message.id,
+					role: message.role,
+					messages: [message],
+				};
+			} else if (currentBubble.role === message.role) {
+				currentBubble.messages.push(message);
 			}
 
-			// 最后一个消息
-			if (
-				index === streamMessages.length - 1 &&
-				assistantStreamMessages.length > 0
-			) {
-				/**
-				 * because of coze /v3/chat insert an additional message which includes the full answer
-				 * so stream handler have to remove it
-				 */
-				assistantStreamMessages.pop();
-				list.push({
-					role: BotMessageRole.Assistant,
-					messages: assistantStreamMessages,
-				});
+			// 响应的最后一个消息
+			if (index === streamMessages.length - 1) {
+				if (currentBubble.role === BotMessageRole.Assistant) {
+					currentBubble.messages.pop();
+				}
+
+				list.push(currentBubble);
 			}
 		});
 
@@ -124,8 +181,8 @@ export default function ChatMessages(props: ChatMessageProps) {
 
 	return (
 		<div className='chat-message'>
-			{map(bubbleList, (bubble, index) => {
-				return <ChatMessageBubble key={index} bubble={bubble} />;
+			{map(bubbleList, (bubble) => {
+				return <ChatMessageBubble key={bubble.id} bubble={bubble} />;
 			})}
 			{isWaitingAnswer && <LoadingDots />}
 		</div>

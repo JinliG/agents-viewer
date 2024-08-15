@@ -24,6 +24,18 @@
 	.inputContainer {
 		position: relative;
 
+		.fileArea {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+			padding: 8px;
+			border: 1px solid @border-color;
+			border-bottom: 0;
+			border-radius: 6px;
+			border-bottom-left-radius: 0;
+			border-bottom-right-radius: 0;
+		}
+
 		.inputArea {
 			border-bottom: unset;
 			border-bottom-left-radius: 0;
@@ -51,5 +63,27 @@
 				align-self: flex-end;
 			}
 		}
+	}
+}
+
+.fileCard {
+	position: relative;
+	padding: 8px 12px;
+	border-radius: 6px;
+	width: 110px;
+	background-color: @file-bg-color;
+
+	.coTitle {
+		margin-bottom: 4px;
+		text-overflow: ellipsis;
+		overflow: hidden;
+		white-space: nowrap;
+	}
+
+	.remove {
+		cursor: pointer;
+		position: absolute;
+		right: -4px;
+		top: -4px;
 	}
 }

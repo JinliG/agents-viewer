@@ -1,30 +1,67 @@
-import { SendOutlined, ClearOutlined, PlusOutlined } from '@ant-design/icons';
-import { useChat, type Message } from 'ai/react';
+import {
+	SendOutlined,
+	ClearOutlined,
+	PlusOutlined,
+	CloseCircleFilled,
+} from '@ant-design/icons';
+import { useChat } from 'ai/react';
 import { Button, Form } from 'antd';
 import TextArea from 'antd/es/input/TextArea';
-import { groupBy, uniqueId } from 'lodash';
+import { groupBy, isEmpty, map, uniqueId } from 'lodash';
 import { useState, type FormEvent } from 'react';
 
 import { cozeApiChat, cozeBase, cozeHost } from '~/network/coze';
-import type { ChatMessage, ChatReq, MessageType } from '~/types/coze';
-import { convertInputToEnterMessage, parseMultiJson } from '~/utils';
+import type { ChatMessage, ChatReq, FileInfo, MessageType } from '~/types/coze';
+import {
+	convertInputToEnterMessage,
+	formatBytes,
+	parseMultiJson,
+} from '~/utils';
 
 import ChatMessages from './components/ChatMessages';
 import styles from './index.module.less';
 import Uploader from './components/Uploader';
+import { BotMessage, BotMessageRole } from '~/types';
+import classNames from 'classnames';
 
 function getContentId(str: string) {
 	return encodeURIComponent(str).replace(/[.*+?^${}()|[\]\\]/g, '-');
 }
 
+interface FileCardProps extends React.HTMLAttributes<HTMLDivElement> {
+	file: FileInfo;
+	allowRemove?: boolean;
+	onRemove?: (id: string) => void;
+}
+export const FileCard: React.FC<FileCardProps> = ({
+	file,
+	allowRemove = true,
+	onRemove,
+	className,
+}) => {
+	const { file_name, bytes, id } = file;
+	return (
+		<div className={classNames(styles.fileCard, className)} key={id}>
+			{allowRemove && (
+				<div className={styles.remove} onClick={() => onRemove?.(id)}>
+					<CloseCircleFilled style={{ color: 'rgba(0,0,0, .8)' }} />
+				</div>
+			)}
+			<div>
+				<div className={styles.coTitle}>{file_name}</div>
+				<div className={styles.desc}>{formatBytes(bytes)}</div>
+			</div>
+		</div>
+	);
+};
+
 interface ChatPanelProps {
 	botId: string;
 }
-
 export default function ChatPanel(props: ChatPanelProps) {
 	const { botId } = props;
 	const [isWaitingAnswer, setIsWaitingAnswer] = useState(false);
-	const [messageCards, setMessageCards] = useState<any[]>([]);
+	const [fileList, setFileList] = useState<FileInfo[]>([]);
 
 	const {
 		messages: streamMessages,
@@ -32,7 +69,6 @@ export default function ChatPanel(props: ChatPanelProps) {
 		handleSubmit,
 		input,
 		handleInputChange,
-		isLoading,
 		stop: stopStream,
 	} = useChat({
 		streamMode: 'text',
@@ -40,15 +76,30 @@ export default function ChatPanel(props: ChatPanelProps) {
 		// 使用 useChat 的钩子并自定义处理可读流逻辑
 		onResponse: (response) => {
 			setIsWaitingAnswer(true);
-			// 合并之前的 streamMessages
-			let bufferMessages: Message[] = [
-				...streamMessages,
+
+			const inputMessageId = getContentId(input + uniqueId());
+			// 多模态消息
+			const payloadMessages: BotMessage[] = map(fileList, (item) => {
+				return {
+					id: inputMessageId,
+					role: BotMessageRole.User,
+					content: '',
+					multiModal: item,
+				};
+			});
+			let bufferMessages: BotMessage[] = [
+				// 合并之前的 streamMessages
+				...(streamMessages as BotMessage[]),
+				...payloadMessages,
+				// 添加当前输入内容
 				{
-					id: getContentId(input + uniqueId()),
-					role: 'user',
+					id: inputMessageId,
+					role: BotMessageRole.User,
 					content: input,
 				},
 			];
+			setFileList([]);
+
 			const reader = response.body?.getReader();
 			const push = () =>
 				reader
@@ -56,22 +107,21 @@ export default function ChatPanel(props: ChatPanelProps) {
 					.then(({ done, value }) => {
 						if (done === true) {
 							setIsWaitingAnswer(false);
-							console.log('--- 读取完毕', bufferMessages);
+							console.log('stream done', bufferMessages);
 							return;
 						}
 						const chunk = new TextDecoder().decode(value);
 						const list = parseMultiJson(chunk);
 						const groupedByType = groupBy(list, (item) => item?.type);
-						console.log('--- typed messages', groupedByType);
 						const { answer = [], ...rest } = groupedByType as {
 							[key in MessageType]: ChatMessage[];
 						};
+						console.log('--- typed messages', groupedByType);
 
-						setMessageCards((state) => [...state, rest]);
 						bufferMessages = bufferMessages.concat(
-							answer.map(({ content, chat_id, role }) => ({
-								id: chat_id,
-								role,
+							answer.map(({ content, id, role }) => ({
+								id,
+								role: role as BotMessageRole,
 								content: content as string,
 							}))
 						);
@@ -95,7 +145,7 @@ export default function ChatPanel(props: ChatPanelProps) {
 		if (!streamMessages.length) {
 			await new Promise((resolve) => setTimeout(resolve, 300));
 		}
-		if (isLoading) {
+		if (isWaitingAnswer) {
 			return;
 		}
 
@@ -107,8 +157,9 @@ export default function ChatPanel(props: ChatPanelProps) {
 				},
 				body: {
 					bot_id: botId,
+					// TODO: 单独 userId
 					user_id: 'Jinli',
-					additional_messages: convertInputToEnterMessage(input),
+					additional_messages: convertInputToEnterMessage(input, fileList),
 					auto_save_history: true,
 					stream: true,
 				} as ChatReq,
@@ -121,17 +172,27 @@ export default function ChatPanel(props: ChatPanelProps) {
 		setStreamMessages([]);
 	};
 
-	// console.log('--- isWaitingAnswer', isWaitingAnswer, streamMessages);
+	const removeFile = (id: string) => {
+		setFileList((state) => state.filter((item) => item.id !== id));
+	};
+	// console.log('--- isWaitingAnswer', isWaitingAnswer);
 
 	return (
 		<div className={styles.chatPanel}>
 			<div className={styles.messageContainer}>
 				<ChatMessages
-					streamMessages={streamMessages}
+					streamMessages={streamMessages as BotMessage[]}
 					isWaitingAnswer={isWaitingAnswer}
 				/>
 			</div>
 			<div className={styles.inputContainer}>
+				{!isEmpty(fileList) && (
+					<div className={styles.fileArea}>
+						{map(fileList, (item) => {
+							return <FileCard file={item} onRemove={removeFile} />;
+						})}
+					</div>
+				)}
 				<TextArea
 					className={styles.inputArea}
 					placeholder='输入消息...'
@@ -152,7 +213,11 @@ export default function ChatPanel(props: ChatPanelProps) {
 						icon={<ClearOutlined />}
 					/>
 					<div className={styles.right}>
-						<Uploader>
+						<Uploader
+							onUploadSuccess={(file) =>
+								setFileList((state) => [...state, file])
+							}
+						>
 							<Button type='text' icon={<PlusOutlined />} />
 						</Uploader>
 						<Form onSubmitCapture={sendMessage}>

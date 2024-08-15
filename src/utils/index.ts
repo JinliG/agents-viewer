@@ -1,13 +1,18 @@
-import type { ChatMessage, EnterMessage } from '~/types/coze';
+import { isEmpty, map } from 'lodash';
+import type {
+	ChatMessage,
+	EnterMessage,
+	FileInfo,
+	ObjectStringItem,
+} from '~/types/coze';
 
-// 将用户输入转换为 EnterMessage
+// 将用户输入转换为多模态 EnterMessage
 export function convertInputToEnterMessage(
 	message: string,
-	image?: any,
-	file?: any
+	fileList?: FileInfo[]
 ): EnterMessage[] {
-	// 纯文本非多模态
-	if (!image && !file) {
+	// 纯文本消息
+	if (isEmpty(fileList)) {
 		return [
 			{
 				content: message,
@@ -17,8 +22,25 @@ export function convertInputToEnterMessage(
 		];
 	}
 
-	// TODO: 上传文件or图片，获取 fileId or fileUrl，然后转为多模态上传
-	return [];
+	// 多模态消息
+	const contents: ObjectStringItem[] = map(fileList, ({ object_type, id }) => {
+		return {
+			type: object_type,
+			file_id: id,
+		};
+	});
+	contents.push({
+		type: 'text',
+		text: message,
+	});
+
+	return [
+		{
+			content_type: 'object_string',
+			content: JSON.stringify(contents),
+			role: 'user',
+		},
+	];
 }
 
 // 格式化多模态消息
@@ -89,4 +111,17 @@ export function isChromeExtension(): boolean {
 	} catch (error) {
 		return false;
 	}
+}
+
+// 格式化字节数
+export function formatBytes(bytes: number, decimals = 2): string {
+	if (bytes === 0) return '0 Bytes';
+
+	const k = 1024;
+	const dm = decimals < 0 ? 0 : decimals;
+	const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+	const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+	return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 }
