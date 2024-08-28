@@ -14,7 +14,7 @@
 	},
 	"action": {
 		"title": "Agents Viewer",
-		"default_popup": "./crx/popup/index.html",
+		"default_popup": "popup.html",
 		"default_icon": {
 			"16": "assets/16x16.png",
 			"32": "assets/32x32.png",
@@ -24,9 +24,15 @@
 		}
 	},
 	"background": {
-		"service_worker": "./crx/service-worker.ts"
+		"service_worker": "./src/crx/service-worker.ts"
 	},
+	"content_scripts": [
+		{
+			"matches": ["http://*/*"],
+			"js": ["./src/crx/content.tsx"]
+		}
+	],
 	"side_panel": { "default_path": "index.html" },
-	"permissions": ["sidePanel", "identity"],
+	"permissions": ["sidePanel", "identity", "storage"],
 	"host_permissions": ["https://*/*"]
 }

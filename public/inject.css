@@ -1,0 +1,11 @@
+/* 用于承接 styled-components 的样式 */
+.wrapper {
+  font-size: initial;
+  color: initial;
+
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', '微软雅黑', sans-serif;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}

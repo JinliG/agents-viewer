@@ -1,3 +1,4 @@
+import { isEmpty } from 'lodash';
 import { CrxMessages } from './constant';
 import { CrxSetting } from './types';
 
@@ -6,13 +7,18 @@ import { CrxSetting } from './types';
 
 const keys: (keyof CrxSetting)[] = ['translateMode', 'bubble'];
 
+const defaultCrxSetting: CrxSetting = {
+	translateMode: ['auto', 'zh-Hans'],
+	bubble: true,
+};
+
 function getCrxSetting() {
 	return new Promise((resolve, reject) => {
-		chrome.storage.sync.get(keys, (result) => {
+		chrome.storage.local.get(keys, (result) => {
 			if (chrome.runtime.lastError) {
 				reject(chrome.runtime.lastError);
 			} else {
-				resolve(result);
+				resolve(isEmpty(result) ? defaultCrxSetting : result);
 			}
 		});
 	});
@@ -31,7 +37,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 			break;
 		case CrxMessages.UPDATE_CRX_SETTING:
 			const { setting } = request;
-			chrome.storage.sync.set(setting, () => {
+			chrome.storage.local.set(setting, () => {
 				sendResponse({ success: true });
 			});
 			break;
