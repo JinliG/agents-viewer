@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Switch } from 'antd';
 import styles from './index.module.less';
-import { CrxMessages } from '../constant';
-import { CrxSetting } from '../types';
+import { CrxMessagesMap, CrxSetting, CrxSourceMap } from '../types';
 
 const Popup: React.FC = () => {
 	const [crxSetting, setCrxSetting] = useState<CrxSetting>({
@@ -12,9 +11,9 @@ const Popup: React.FC = () => {
 
 	useEffect(() => {
 		chrome.runtime.sendMessage(
-			{ type: CrxMessages.GET_CRX_SETTING },
+			{ type: CrxMessagesMap.GET_CRX_SETTING, source: CrxSourceMap.POPUP },
 			(response) => {
-				console.log('--- res', response);
+				console.log('--- popup res', response);
 			}
 		);
 	}, []);
@@ -25,7 +24,8 @@ const Popup: React.FC = () => {
 			[key]: value,
 		}));
 		chrome.runtime.sendMessage({
-			type: CrxMessages.UPDATE_CRX_SETTING,
+			type: CrxMessagesMap.UPDATE_CRX_SETTING,
+			source: CrxSourceMap.POPUP,
 			setting: {
 				...crxSetting,
 				[key]: value,

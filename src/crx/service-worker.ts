@@ -1,6 +1,5 @@
 import { isEmpty } from 'lodash';
-import { CrxMessages } from './constant';
-import { CrxSetting } from './types';
+import { CrxMessagesMap, CrxSetting } from './types';
 
 // chrome.storage.local：用于存储特定于浏览器窗口的数据。
 // chrome.storage.sync：用于存储跨设备同步的数据。
@@ -24,24 +23,45 @@ function getCrxSetting() {
 	});
 }
 
-// chrome.sidePanel
-// 	.setPanelBehavior({ openPanelOnActionClick: true })
-// 	.catch((error) => console.error(error));
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+	console.log('--- sw receive message', request, sender.tab);
 	switch (request.type) {
-		case CrxMessages.GET_CRX_SETTING:
+		case CrxMessagesMap.GET_CRX_SETTING:
 			getCrxSetting().then((result) => {
 				sendResponse(result);
 			});
 			break;
-		case CrxMessages.UPDATE_CRX_SETTING:
+		case CrxMessagesMap.UPDATE_CRX_SETTING:
 			const { setting } = request;
 			chrome.storage.local.set(setting, () => {
 				sendResponse({ success: true });
 			});
 			break;
+		case CrxMessagesMap.OPEN_SIDE_PANEL:
+			chrome.sidePanel
+				.open({
+					windowId: sender.tab.windowId,
+				})
+				.catch((err) => console.error(err))
+				.finally(() => {
+					sendResponse({ success: true });
+				});
+			break;
+		case CrxMessagesMap.CLOSE_SIDE_PANEL:
+			chrome.sidePanel
+				.setOptions({
+					enabled: false,
+				})
+				.finally(() => {
+					sendResponse({ success: true });
+				});
+			break;
 		default:
 			break;
 	}
+
+	// 异步任务
+	return true;
 });
+
+console.log('--- sw loaded');

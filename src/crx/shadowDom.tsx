@@ -12,14 +12,11 @@ export default function ShadowDom({
 	children: React.ReactNode;
 }) {
 	const [isInjected, setIsInjected] = useState(false);
+
 	const [shadowHost] = useState(() => {
 		const host = document.createElement('shadow-dom-host');
-		host.style.position = 'fixed';
-		host.style.height = '100%';
-		host.style.width = '100%';
 		return host;
 	});
-
 	const [shadowRoot] = useState(() => {
 		const link = document.createElement('link');
 		link.rel = 'stylesheet';
@@ -32,7 +29,6 @@ export default function ShadowDom({
 		const root = shadowHost.attachShadow({ mode: 'closed' });
 		root.appendChild(head);
 
-		console.log('--- link', link);
 		return root;
 	});
 

@@ -1,4 +1,0 @@
-export const CrxMessages = {
-	GET_CRX_SETTING: 'GET_CRX_SETTING',
-	UPDATE_CRX_SETTING: 'UPDATE_CRX_SETTING',
-};
