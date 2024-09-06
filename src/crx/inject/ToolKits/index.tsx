@@ -143,13 +143,12 @@ const ToolKits: React.FC<any> = () => {
 	const handleTranslate = () => {
 		const textNodes = getTextNodesWithXPath(document.body);
 		const originalTexts = textNodes.map(({ text }) => text);
-		console.log('--- textNodes', textNodes);
+		// console.log('--- textNodes', textNodes);
 
 		injectTransNodeStyle();
 		translator
 			.translateBatch(originalTexts, 'en', 'zh')
 			.then((translatedTexts) => {
-				console.log('Translate result', translatedTexts);
 				renderTranslateResult(translatedTexts, textNodes);
 			});
 	};

@@ -1,11 +1,14 @@
 import { createRoot } from 'react-dom/client';
 import ToolKits from './inject/ToolKits';
 import ShadowDom from './ShadowDom';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { CrxMessagesMap, CrxSetting, CrxSourceMap } from './types';
 import './utils/htmlNodeUtils.ts';
+import SectionKits from './inject/SectionKits/index.tsx';
 
 console.log('--- content script loaded');
+
+let isSelectionChanged = false;
 
 /**
  * 1. 使用 ShadowDom 避免污染宿主页等问题
@@ -13,8 +16,35 @@ console.log('--- content script loaded');
  */
 export function Injects(): React.ReactElement {
 	const [crxSetting, setCrxSetting] = useState<CrxSetting>();
+	const [selectionText, setSelectionText] = useState<string | null>();
+	const [sectionRect, setSectionRect] = useState<DOMRect>();
+
+	const handleSelectionChange = () => {
+		isSelectionChanged = true;
+	};
+
+	const handleMouseUp = () => {
+		const selection = window.getSelection();
+
+		if (isSelectionChanged && selection.toString().length > 0) {
+			if (selection && selection.rangeCount > 0) {
+				const range = selection.getRangeAt(0);
+				const rect = range.getBoundingClientRect();
+				console.log('选中文本的边界框信息：', selection.toString(), rect);
+				setSectionRect(rect);
+				setSelectionText(selection.toString());
+			} else {
+				console.log('没有选中文本');
+			}
+			isSelectionChanged = false;
+		} else {
+			setSectionRect(null);
+			setSelectionText(null);
+		}
+	};
 
 	useEffect(() => {
+		console.log('--- rerended', document.location.href);
 		chrome.runtime.sendMessage(
 			{
 				type: CrxMessagesMap.GET_CRX_SETTING,
@@ -27,9 +57,37 @@ export function Injects(): React.ReactElement {
 				}
 			}
 		);
+
+		// 添加文本选择事件监听器
+		document.addEventListener('selectionchange', handleSelectionChange);
+		document.addEventListener('mouseup', handleMouseUp);
+
+		return () => {
+			document.removeEventListener('selectionchange', handleSelectionChange);
+			document.removeEventListener('mouseup', handleMouseUp);
+		};
 	}, []);
 
-	return <ShadowDom>{crxSetting?.bubble && <ToolKits />}</ShadowDom>;
+	const renderToolKits = useCallback(() => {
+		if (crxSetting?.bubble) {
+			return <ToolKits />;
+		}
+	}, [crxSetting?.bubble]);
+
+	const renderSectionKits = useCallback(() => {
+		if (selectionText && sectionRect) {
+			return <SectionKits rect={sectionRect} sectionText={selectionText} />;
+		}
+	}, [selectionText, sectionRect]);
+
+	console.log('--- changess', selectionText, sectionRect);
+
+	return (
+		<ShadowDom>
+			{renderToolKits()}
+			{renderSectionKits()}
+		</ShadowDom>
+	);
 }
 
 function render(content: React.ReactElement) {
