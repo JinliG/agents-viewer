@@ -3,9 +3,14 @@ import { WechatWorkOutlined, TranslationOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import classNames from 'classnames';
 import { CrxMessagesMap, CrxSourceMap } from '~/crx/types';
-import { getTextNodesWithXPath } from '~/crx/utils/htmlNodeUtils';
+import {
+	TextNode,
+	getTextNodesWithXPath,
+	isBlockLevelElement,
+} from '~/crx/utils/htmlNodeUtils';
 
 import { YandexTranslator } from '@translate-tools/core/esm/translators/YandexTranslator';
+import { forEach } from 'lodash';
 const translator = new YandexTranslator();
 
 const StyledDiv = styled.div`
@@ -48,6 +53,52 @@ const StyledDiv = styled.div`
 	}
 `;
 
+const renderTranslateResult = (result: string[], textNodes: TextNode[]) => {
+	let transWrapper = null;
+	let transDom = null;
+	let siblingParent: HTMLElement = null;
+
+	const init = (item: TextNode) => {
+		siblingParent = item.siblingParentBlock;
+		transWrapper = document.createElement('avr-trans');
+		transDom = isBlockLevelElement(item.siblingParentBlock)
+			? document.createElement('avr-trans-block')
+			: document.createElement('avr-trans-inline');
+	};
+
+	const cloneElement = (item: TextNode) => {
+		if (item.element === item.siblingParentBlock) {
+			return item.node.cloneNode(true);
+		}
+
+		return item.element.cloneNode(true);
+	};
+
+	forEach(textNodes, (item, index) => {
+		// 初始化
+		if (!transWrapper && !transDom) {
+			init(item);
+
+			const transNode = cloneElement(item);
+			transNode.textContent = result[index];
+			transDom.appendChild(transNode);
+			return;
+		}
+
+		// 新的父元素
+		if (siblingParent && siblingParent !== item.siblingParentBlock) {
+			transWrapper.appendChild(transDom);
+			siblingParent.appendChild(transWrapper);
+
+			init(item);
+		}
+
+		const transNode = cloneElement(item);
+		transNode.textContent = result[index];
+		transDom.appendChild(transNode);
+	});
+};
+
 const ToolKits: React.FC<any> = () => {
 	const toolKitsRef = useRef<HTMLDivElement>();
 	const [toggleOpened, setToggleOpened] = useState(false);
@@ -71,28 +122,35 @@ const ToolKits: React.FC<any> = () => {
 		);
 	};
 
-	const handleTranslate = () => {
-		const results = getTextNodesWithXPath(document.body);
-		const originalTexts = results.map(({ text }) => text);
+	const injectTransNodeStyle = () => {
+		if (!document.querySelector('#avr-trans-style')) {
+			const style = document.createElement('style');
+			style.id = 'avr-trans-style';
+			style.innerHTML = `
+			avr-trans >  avr-trans-block {
+				display: block;
+				margin: 4px 0 8px !important;
+			}
 
+			avr-trans >  avr-trans-inline {
+				margin-inline-start: 4px !important;
+			}
+		`;
+			document.head.appendChild(style);
+		}
+	};
+
+	const handleTranslate = () => {
+		const textNodes = getTextNodesWithXPath(document.body);
+		const originalTexts = textNodes.map(({ text }) => text);
+		console.log('--- textNodes', textNodes);
+
+		injectTransNodeStyle();
 		translator
 			.translateBatch(originalTexts, 'en', 'zh')
 			.then((translatedTexts) => {
 				console.log('Translate result', translatedTexts);
-
-				results.forEach((result, index) => {
-					const transTag = document.createElement('avr-trans');
-					const transBlock = document.createElement('avr-trans-block');
-					transBlock.innerText = translatedTexts[index];
-					transBlock.setAttribute(
-						'style',
-						'display: block;margin:4px 0 8px !important'
-					);
-					transTag.appendChild(transBlock);
-
-					// 将内容追加到原始元素中
-					result.element.appendChild(transTag);
-				});
+				renderTranslateResult(translatedTexts, textNodes);
 			});
 	};
 

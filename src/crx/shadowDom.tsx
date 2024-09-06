@@ -21,7 +21,7 @@ export default function ShadowDom({
 		const link = document.createElement('link');
 		link.rel = 'stylesheet';
 		link.type = 'text/css';
-		link.href = chrome.runtime.getURL('inject.css');
+		link.href = chrome.runtime.getURL('shadow-dom.css');
 
 		const head = document.createElement('head');
 		head.appendChild(link);

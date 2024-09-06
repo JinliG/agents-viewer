@@ -28,7 +28,7 @@
 	},
 	"content_scripts": [
 		{
-			"matches": ["http://*/*"],
+			"matches": ["http://*/*", "https://developer.mozilla.org/*"],
 			"js": ["./src/crx/content.tsx"]
 		}
 	],
