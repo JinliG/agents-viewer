@@ -1,11 +1,10 @@
 import { createRoot } from 'react-dom/client';
-import ToolKits from './inject/ToolKits';
+import ToolKits from './inject/ToolKits/index.tsx';
 import ShadowDom from './ShadowDom';
 import { useCallback, useEffect, useState } from 'react';
 import { CrxMessagesMap, CrxSetting, CrxSourceMap } from './types';
 import './utils/htmlNodeUtils.ts';
 import SectionKits from './inject/SectionKits/index.tsx';
-
 console.log('--- content script loaded');
 
 let isSelectionChanged = false;
@@ -80,7 +79,7 @@ export function Injects(): React.ReactElement {
 		}
 	}, [selectionText, sectionRect]);
 
-	console.log('--- changess', selectionText, sectionRect);
+	// console.log('--- changess', selectionText, sectionRect);
 
 	return (
 		<ShadowDom>

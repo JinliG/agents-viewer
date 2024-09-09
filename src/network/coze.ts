@@ -1,5 +1,6 @@
 import { createAxiosInstance } from '~/network/instance';
 import type {
+	ChatReq,
 	Conversation,
 	CozeAPIResponse,
 	EnterMessage,
@@ -7,10 +8,26 @@ import type {
 	MetaDataType,
 	SimpleBot,
 } from '~/types/coze';
+import { convertInputToEnterMessage } from '~/utils';
 
 export const cozeBase = 'https://api.coze.cn';
 export const cozeHost = 'api.coze.cn';
 export const cozeApiChat = '/v3/chat';
+
+export const fetchHandler = async (
+	path: string,
+	options?: RequestInit
+): Promise<Response> => {
+	const fullUrl = new URL(path, cozeBase).toString();
+	return fetch(fullUrl, {
+		...options,
+		headers: {
+			Authorization: `Bearer ${import.meta.env.VITE_COZE_API_KEY}`,
+			'Content-Type': 'application/json',
+			...(options?.headers || {}),
+		},
+	});
+};
 
 const { get, post } = createAxiosInstance(cozeBase, {
 	headers: {
@@ -60,5 +77,32 @@ export const uploadFile = (file: File) => {
 		headers: {
 			'Content-Type': 'multipart/form-data',
 		},
+	});
+};
+
+/**
+ * 单次对话调用
+ * PS：axios 基于 xhr 封装，不支持 readable stream，所以这里使用 fetch
+ * @param input
+ * @param fileList
+ * @param options
+ * @returns
+ */
+export const singleStreamChat = (
+	input: string,
+	fileList?: FileInfo[],
+	options?: ChatReq
+) => {
+	const body = {
+		bot_id: import.meta.env.VITE_COZE_GLOBAL_BOT,
+		user_id: 'Jinli',
+		additional_messages: convertInputToEnterMessage(input, fileList),
+		auto_save_history: true,
+		stream: true,
+		...options,
+	};
+	return fetchHandler(cozeApiChat, {
+		method: 'POST',
+		body: JSON.stringify(body),
 	});
 };
