@@ -1,67 +1,98 @@
 import { isEmpty } from 'lodash';
-import { CrxMessagesMap, CrxSetting } from './types';
+import { CrxMessageRequest, CrxMessageTypesMap, GlobalOptions } from './types';
 
-// chrome.storage.local：用于存储特定于浏览器窗口的数据。
-// chrome.storage.sync：用于存储跨设备同步的数据。
+const globalOptionKeys: (keyof GlobalOptions)[] = [
+	'botStore',
+	'common',
+	'floatKit',
+	'sectionKit',
+	'user',
+];
 
-const keys: (keyof CrxSetting)[] = ['translateMode', 'bubble'];
-
-const defaultCrxSetting: CrxSetting = {
-	translateMode: ['auto', 'zh-Hans'],
-	bubble: true,
+// 初始化
+const defaultGlobalOptions: GlobalOptions = {
+	botStore: {},
+	common: {},
+	floatKit: {
+		visible: true,
+	},
+	sectionKit: {
+		customFeatures: [],
+	},
+	user: {},
 };
+setGlobalOptions(defaultGlobalOptions);
 
-function getCrxSetting() {
+function getGlobalOptions(keys: (keyof GlobalOptions)[] = globalOptionKeys) {
 	return new Promise((resolve, reject) => {
 		chrome.storage.local.get(keys, (result) => {
 			if (chrome.runtime.lastError) {
 				reject(chrome.runtime.lastError);
 			} else {
-				resolve(isEmpty(result) ? defaultCrxSetting : result);
+				resolve(isEmpty(result) ? {} : result);
+			}
+		});
+	});
+}
+function setGlobalOptions(options: GlobalOptions) {
+	return new Promise((resolve, reject) => {
+		chrome.storage.local.set(options, () => {
+			if (chrome.runtime.lastError) {
+				reject(chrome.runtime.lastError);
+			} else {
+				resolve(true);
 			}
 		});
 	});
 }
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-	console.log('--- sw receive message', request, sender.tab);
-	switch (request.type) {
-		case CrxMessagesMap.GET_CRX_SETTING:
-			getCrxSetting().then((result) => {
-				sendResponse(result);
-			});
-			break;
-		case CrxMessagesMap.UPDATE_CRX_SETTING:
-			const { setting } = request;
-			chrome.storage.local.set(setting, () => {
-				sendResponse({ success: true });
-			});
-			break;
-		case CrxMessagesMap.OPEN_SIDE_PANEL:
-			chrome.sidePanel
-				.open({
-					windowId: sender.tab.windowId,
-				})
-				.catch((err) => console.error(err))
-				.finally(() => {
+chrome.runtime.onMessage.addListener(
+	(request: CrxMessageRequest, sender, sendResponse) => {
+		console.log('--- sw receive message', request, sender.tab);
+		const { type, payload = {} } = request;
+		switch (type) {
+			case CrxMessageTypesMap.GET_GLOBAL_OPTIONS:
+				const { keys } = payload;
+				getGlobalOptions(keys).then((result) => {
+					sendResponse(result);
+				});
+				break;
+			case CrxMessageTypesMap.UPDATE_GLOBAL_OPTIONS:
+				const { options } = request;
+				setGlobalOptions(options).then(() => {
 					sendResponse({ success: true });
 				});
-			break;
-		case CrxMessagesMap.CLOSE_SIDE_PANEL:
-			chrome.sidePanel
-				.setOptions({
-					enabled: false,
-				})
-				.finally(() => {
-					sendResponse({ success: true });
-				});
-			break;
-		default:
-			break;
-	}
+				break;
+			case CrxMessageTypesMap.OPEN_SIDE_PANEL:
+				chrome.sidePanel
+					.open({
+						windowId: sender.tab.windowId,
+					})
+					.catch((err) => console.error(err))
+					.finally(() => {
+						sendResponse({ success: true });
+					});
+				break;
+			case CrxMessageTypesMap.CLOSE_SIDE_PANEL:
+				chrome.sidePanel
+					.setOptions({
+						enabled: false,
+					})
+					.finally(() => {
+						sendResponse({ success: true });
+					});
+				break;
+			default:
+				break;
+		}
 
-	// 异步任务
-	return true;
-});
+		// 异步任务
+		return true;
+	}
+);
+
+chrome.sidePanel
+	.setPanelBehavior({ openPanelOnActionClick: true })
+	.catch((error) => console.error(error));
 
 console.log('--- sw loaded');

@@ -10,6 +10,7 @@ import { debounce, map, noop } from 'lodash';
 import { singleStreamChat } from '~/network/coze';
 import { filterChatMessages, useStreamHandler } from '~/hooks/useStreamHandler';
 import KitPanel from './components/KitPanel';
+import { CustomKitFeature } from '~/crx/types';
 
 const StyledDiv = styled.div`
 	position: absolute;
@@ -53,9 +54,8 @@ interface SelectionInfo {
 	selectionContext: string;
 }
 
-export interface KitFeature {
-	label: string;
-	icon: React.ReactNode;
+export interface KitFeature extends CustomKitFeature {
+	icon?: React.ReactNode;
 	tip?: string;
 	action?: () => void;
 	Template?: React.FC<any>;
@@ -64,8 +64,9 @@ export interface KitFeature {
 
 interface SectionKitsProps {
 	[key: string]: any;
+	customFeatures: CustomKitFeature[];
 }
-const SectionKits: React.FC<SectionKitsProps> = () => {
+const SectionKits: React.FC<SectionKitsProps> = ({ customFeatures = [] }) => {
 	const [selectionInfo, setSelectionInfo] = useState<SelectionInfo>();
 	const [showKitPanel, setShowKitPanel] = useState(false);
 	const [currentFeature, setCurrentFeature] = useState<KitFeature>();
@@ -123,13 +124,10 @@ const SectionKits: React.FC<SectionKitsProps> = () => {
 	const { top, left, height } = selectionRect;
 	const results = filterChatMessages(chatMessages, ['answer']);
 
-	const handleTranslate = () => {
+	const handleTranslate = (prompt: string) => {
 		if (!processing) {
-			const text = selectionContext
-				? `根据上下文：${selectionContext}，翻译一下：${selectionText}`
-				: `翻译一下：${selectionText}`;
 			setLoading(true);
-			singleStreamChat(text)
+			singleStreamChat(prompt)
 				.then((response) => {
 					setLoading(false);
 					handleStream(response.body);
@@ -140,13 +138,10 @@ const SectionKits: React.FC<SectionKitsProps> = () => {
 		}
 	};
 
-	const handleExplain = () => {
+	const handleExplain = (prompt: string) => {
 		if (!processing) {
-			const text = selectionContext
-				? `根据上下文：${selectionContext}，解释一下：${selectionText}`
-				: `解释一下：${selectionText}`;
 			setLoading(true);
-			singleStreamChat(text)
+			singleStreamChat(prompt)
 				.then((response) => {
 					setLoading(false);
 					handleStream(response.body);
@@ -160,21 +155,28 @@ const SectionKits: React.FC<SectionKitsProps> = () => {
 	const features: KitFeature[] = [
 		{
 			label: '翻译',
+			prompt: `根据上下文：${selectionContext}，翻译一下：${selectionText}`,
 			tip: '翻译',
 			icon: <TranslationOutlined className='icon' />,
-			action: handleTranslate,
+			action: () => handleTranslate(features[0].prompt),
 		},
 		{
 			label: '解释',
+			prompt: `根据上下文：${selectionContext}，解释一下：${selectionText}`,
 			tip: '解释',
 			icon: <BookOutlined className='icon' />,
-			action: handleExplain,
+			action: () => handleExplain(features[1].prompt),
 		},
 		{
 			label: '朗读',
+			prompt: '',
 			tip: '朗读',
 			icon: <SoundOutlined className='icon' />,
 		},
+		...map(customFeatures, (item) => ({
+			...item,
+			prompt: item.prompt.replace('{selection}', selectionText),
+		})),
 	];
 
 	console.log('--- results', processing, results);

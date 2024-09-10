@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { WechatWorkOutlined, TranslationOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import classNames from 'classnames';
-import { CrxMessagesMap, CrxSourceMap } from '~/crx/types';
+import { CrxMessageTypesMap, CrxSourceMap } from '~/crx/types';
 import {
 	TextNode,
 	getTextNodesWithXPath,
@@ -17,7 +17,7 @@ const StyledDiv = styled.div`
 	position: relative;
 	z-index: 999;
 
-	.toolKits {
+	.floatKits {
 		position: fixed;
 		right: 0;
 		bottom: 20%;
@@ -99,8 +99,8 @@ const renderTranslateResult = (result: string[], textNodes: TextNode[]) => {
 	});
 };
 
-const ToolKits: React.FC<any> = () => {
-	const toolKitsRef = useRef<HTMLDivElement>();
+const FloatKits: React.FC<any> = () => {
+	const floatKitsRef = useRef<HTMLDivElement>();
 	const [toggleOpened, setToggleOpened] = useState(false);
 
 	// 当前 tab 是否已翻译
@@ -110,8 +110,8 @@ const ToolKits: React.FC<any> = () => {
 		chrome.runtime.sendMessage(
 			{
 				type: toggleOpened
-					? CrxMessagesMap.CLOSE_SIDE_PANEL
-					: CrxMessagesMap.OPEN_SIDE_PANEL,
+					? CrxMessageTypesMap.CLOSE_SIDE_PANEL
+					: CrxMessageTypesMap.OPEN_SIDE_PANEL,
 				source: CrxSourceMap.INJECT,
 			},
 			(response) => {
@@ -156,18 +156,18 @@ const ToolKits: React.FC<any> = () => {
 	return (
 		<StyledDiv>
 			<div
-				className='toolKits'
-				ref={toolKitsRef}
+				className='floatKits'
+				ref={floatKitsRef}
 				draggable
 				onDrag={(e) => {
 					e.preventDefault();
 					if (e.clientY) {
-						toolKitsRef.current.style.top = `${e.clientY}px`;
+						floatKitsRef.current.style.top = `${e.clientY}px`;
 					}
 				}}
 				onDragEnd={(e) => {
 					e.preventDefault();
-					toolKitsRef.current.style.top = `${e.clientY}px`;
+					floatKitsRef.current.style.top = `${e.clientY}px`;
 				}}
 			>
 				<div
@@ -183,4 +183,4 @@ const ToolKits: React.FC<any> = () => {
 		</StyledDiv>
 	);
 };
-export default ToolKits;
+export default FloatKits;
