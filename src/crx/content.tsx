@@ -7,40 +7,12 @@ import './utils/htmlNodeUtils.ts';
 import SectionKits from './inject/SectionKits/index.tsx';
 console.log('--- content script loaded');
 
-let isSelectionChanged = false;
-
 /**
  * 1. 使用 ShadowDom 避免污染宿主页等问题
  * 2. 由于 css 在 content_script 内引用时会有问题，改为使用 styled-components
  */
 export function Injects(): React.ReactElement {
 	const [crxSetting, setCrxSetting] = useState<CrxSetting>();
-	const [selectionText, setSelectionText] = useState<string | null>();
-	const [sectionRect, setSectionRect] = useState<DOMRect>();
-
-	const handleSelectionChange = () => {
-		isSelectionChanged = true;
-	};
-
-	const handleMouseUp = () => {
-		const selection = window.getSelection();
-
-		if (isSelectionChanged && selection.toString().length > 0) {
-			if (selection && selection.rangeCount > 0) {
-				const range = selection.getRangeAt(0);
-				const rect = range.getBoundingClientRect();
-				console.log('选中文本的边界框信息：', selection.toString(), rect);
-				setSectionRect(rect);
-				setSelectionText(selection.toString());
-			} else {
-				console.log('没有选中文本');
-			}
-			isSelectionChanged = false;
-		} else {
-			setSectionRect(null);
-			setSelectionText(null);
-		}
-	};
 
 	useEffect(() => {
 		console.log('--- rerended', document.location.href);
@@ -56,15 +28,6 @@ export function Injects(): React.ReactElement {
 				}
 			}
 		);
-
-		// 添加文本选择事件监听器
-		document.addEventListener('selectionchange', handleSelectionChange);
-		document.addEventListener('mouseup', handleMouseUp);
-
-		return () => {
-			document.removeEventListener('selectionchange', handleSelectionChange);
-			document.removeEventListener('mouseup', handleMouseUp);
-		};
 	}, []);
 
 	const renderToolKits = useCallback(() => {
@@ -73,18 +36,10 @@ export function Injects(): React.ReactElement {
 		}
 	}, [crxSetting?.bubble]);
 
-	const renderSectionKits = useCallback(() => {
-		if (selectionText && sectionRect) {
-			return <SectionKits rect={sectionRect} sectionText={selectionText} />;
-		}
-	}, [selectionText, sectionRect]);
-
-	// console.log('--- changess', selectionText, sectionRect);
-
 	return (
 		<ShadowDom>
 			{renderToolKits()}
-			{renderSectionKits()}
+			<SectionKits />
 		</ShadowDom>
 	);
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import {
 	BookOutlined,
@@ -9,12 +9,14 @@ import { Tooltip } from 'antd';
 import { debounce, map, noop } from 'lodash';
 import { singleStreamChat } from '~/network/coze';
 import { filterChatMessages, useStreamHandler } from '~/hooks/useStreamHandler';
+import KitPanel from './components/KitPanel';
 
 const StyledDiv = styled.div`
 	position: absolute;
 
 	.section-kits {
 		position: absolute;
+		z-index: 999;
 		display: flex;
 		align-items: center;
 		gap: 8px;
@@ -37,34 +39,125 @@ const StyledDiv = styled.div`
 			}
 		}
 	}
-`;
 
-interface SectionKitsProps {
-	rect: DOMRect;
-	sectionText: string;
+	.kit-panel-wrapper {
+		position: absolute;
+		z-index: 999;
+	}
+`;
+let isSelectionChanged = false;
+
+interface SelectionInfo {
+	selectionText: string;
+	selectionRect: DOMRect;
+	selectionContext: string;
 }
 
 export interface KitFeature {
 	label: string;
-	tip?: string;
 	icon: React.ReactNode;
+	tip?: string;
 	action?: () => void;
+	Template?: React.FC<any>;
+	CustomPanel?: React.FC<any>;
 }
-const SectionKits: React.FC<SectionKitsProps> = ({ rect, sectionText }) => {
-	const { top, left } = rect;
 
+interface SectionKitsProps {
+	[key: string]: any;
+}
+const SectionKits: React.FC<SectionKitsProps> = () => {
+	const [selectionInfo, setSelectionInfo] = useState<SelectionInfo>();
+	const [showKitPanel, setShowKitPanel] = useState(false);
 	const [currentFeature, setCurrentFeature] = useState<KitFeature>();
-	const { handleStream, processing, bufferMessages } = useStreamHandler();
+	const [loading, setLoading] = useState(false);
+
+	const { handleStream, processing, chatMessages } = useStreamHandler();
+
+	const handleRemoveSectionKit = () => {
+		setSelectionInfo(null);
+		setShowKitPanel(false);
+	};
+
+	const handleSelectionChange = () => {
+		isSelectionChanged = true;
+	};
+
+	const handleMouseUp = () => {
+		const selection = window.getSelection();
+
+		if (isSelectionChanged && selection.toString().length > 0) {
+			if (selection && selection.rangeCount > 0) {
+				const range = selection.getRangeAt(0);
+				const rect = range.getBoundingClientRect();
+
+				setCurrentFeature(null);
+				setSelectionInfo({
+					selectionText: selection.toString(),
+					selectionRect: rect,
+					selectionContext: selection.anchorNode.textContent,
+				});
+				console.log('选中文本的边界框信息：', selection.toString(), rect);
+			}
+			isSelectionChanged = false;
+		} else {
+			handleRemoveSectionKit();
+		}
+	};
+
+	useEffect(() => {
+		// 添加文本选择事件监听器
+		document.addEventListener('selectionchange', handleSelectionChange);
+		document.addEventListener('mouseup', handleMouseUp);
+
+		return () => {
+			document.removeEventListener('selectionchange', handleSelectionChange);
+			document.removeEventListener('mouseup', handleMouseUp);
+		};
+	}, []);
+
+	if (!selectionInfo) {
+		return null;
+	}
+
+	const { selectionRect, selectionText, selectionContext } = selectionInfo;
+	const { top, left, height } = selectionRect;
+	const results = filterChatMessages(chatMessages, ['answer']);
 
 	const handleTranslate = () => {
 		if (!processing) {
-			const text = `翻译一下：${sectionText}`;
-			singleStreamChat(text).then((response) => {
-				handleStream(response.body);
-			});
+			const text = selectionContext
+				? `根据上下文：${selectionContext}，翻译一下：${selectionText}`
+				: `翻译一下：${selectionText}`;
+			setLoading(true);
+			singleStreamChat(text)
+				.then((response) => {
+					setLoading(false);
+					handleStream(response.body);
+				})
+				.catch(() => {
+					setLoading(false);
+				});
 		}
 	};
-	const features = [
+
+	const handleExplain = () => {
+		if (!processing) {
+			const text = selectionContext
+				? `根据上下文：${selectionContext}，解释一下：${selectionText}`
+				: `解释一下：${selectionText}`;
+			setLoading(true);
+			singleStreamChat(text)
+				.then((response) => {
+					setLoading(false);
+					handleStream(response.body);
+				})
+				.catch(() => {
+					setLoading(false);
+				});
+		}
+	};
+
+	const features: KitFeature[] = [
 		{
 			label: '翻译',
 			tip: '翻译',
@@ -75,6 +168,7 @@ const SectionKits: React.FC<SectionKitsProps> = ({ rect, sectionText }) => {
 			label: '解释',
 			tip: '解释',
 			icon: <BookOutlined className='icon' />,
+			action: handleExplain,
 		},
 		{
 			label: '朗读',
@@ -83,32 +177,73 @@ const SectionKits: React.FC<SectionKitsProps> = ({ rect, sectionText }) => {
 		},
 	];
 
-	const results = filterChatMessages(bufferMessages, ['answer']);
+	console.log('--- results', processing, results);
+
+	const handleCloseKitPanel = () => {
+		setShowKitPanel(false);
+	};
+
+	const { CustomPanel } = currentFeature || {};
 
 	return (
 		<StyledDiv onMouseUp={(e) => e.stopPropagation()}>
-			<div className='section-kits' style={{ top: top + window.scrollY, left }}>
-				{map(features, (feature, index) => {
-					const { tip, icon, action = noop } = feature;
-					return (
-						<Tooltip
-							key={index}
-							title={tip}
-							getTooltipContainer={(triggerNode) => triggerNode.parentElement}
-						>
-							<div
-								className='feature'
-								onClick={debounce(() => {
-									setCurrentFeature(feature);
-									action?.();
-								}, 300)}
+			{!currentFeature && (
+				<div
+					className='section-kits'
+					style={{ top: top + window.scrollY + height + 10, left }}
+				>
+					{map(features, (feature, index) => {
+						const { tip, icon, action } = feature;
+						return (
+							<Tooltip
+								arrow={false}
+								key={index}
+								title={tip}
+								getTooltipContainer={(triggerNode) => triggerNode.parentElement}
 							>
-								{icon}
-							</div>
-						</Tooltip>
-					);
-				})}
-			</div>
+								<div
+									className='feature'
+									onClick={
+										action
+											? debounce(() => {
+													setShowKitPanel(true);
+													setCurrentFeature(feature);
+													action();
+											  }, 300)
+											: noop
+									}
+								>
+									{icon}
+								</div>
+							</Tooltip>
+						);
+					})}
+				</div>
+			)}
+			{showKitPanel && currentFeature && (
+				<div
+					className='kit-panel-wrapper'
+					style={{ top: top + window.scrollY + height + 20, left }}
+				>
+					{CustomPanel ? (
+						<CustomPanel
+							loading={loading}
+							results={results}
+							selectionText={selectionText}
+							feature={currentFeature}
+							onClose={handleCloseKitPanel}
+						/>
+					) : (
+						<KitPanel
+							loading={loading}
+							results={results}
+							selectionText={selectionText}
+							feature={currentFeature}
+							onClose={handleCloseKitPanel}
+						/>
+					)}
+				</div>
+			)}
 		</StyledDiv>
 	);
 };

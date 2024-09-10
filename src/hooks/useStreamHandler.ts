@@ -6,6 +6,7 @@ import { parseMultiJson } from '~/utils';
 interface StreamHandlerResult<T> {
 	processing: boolean;
 	bufferMessages: ChatMessage[];
+	chatMessages: ChatMessage[];
 	error?: Error;
 	handleStream: (stream: ReadableStream) => void;
 }
@@ -13,27 +14,29 @@ interface StreamHandlerResult<T> {
 export function useStreamHandler<T>(): StreamHandlerResult<T> {
 	const [processing, setProcessing] = useState(false);
 	const [bufferMessages, setBufferMessages] = useState<ChatMessage[]>([]);
+	const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 	const [error, setError] = useState<Error>();
 
 	// 流处理逻辑
 	const handleStream = (stream: ReadableStream) => {
 		setProcessing(true);
-		const reader = stream?.getReader();
+		setChatMessages([]);
 
+		const reader = stream?.getReader();
 		const push = () =>
 			reader
 				?.read()
 				.then(({ done, value }) => {
-					console.log('--- done', done, value);
 					if (done === true) {
 						setProcessing(false);
-						console.log('stream done', bufferMessages);
+						console.log('stream done', chatMessages);
 						return;
 					}
 					const chunk = new TextDecoder().decode(value);
 					const list = parseMultiJson(chunk);
-					console.log('--- list', list);
+
 					setBufferMessages((prev) => [...prev, ...list]);
+					setChatMessages((prev) => [...prev, ...list]);
 					push();
 				})
 				.catch((e) => {
@@ -41,12 +44,12 @@ export function useStreamHandler<T>(): StreamHandlerResult<T> {
 					setProcessing(false);
 				});
 
-		console.log('--- reder', reader);
 		push();
 	};
 
 	return {
 		processing,
+		chatMessages,
 		bufferMessages,
 		error,
 		handleStream,
@@ -57,5 +60,6 @@ export function filterChatMessages(
 	events: ChatMessage[],
 	types: MessageType[]
 ) {
-	return filter(events, (item) => types.includes(item.type));
+	// v3 chat 末尾会追加为完整的消息，这里移除
+	return filter(events, (item) => types.includes(item.type)).slice(0, -1);
 }
