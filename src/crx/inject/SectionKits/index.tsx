@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import {
 	BookOutlined,
@@ -10,8 +10,17 @@ import { debounce, map, noop } from 'lodash';
 import { singleStreamChat } from '~/network/coze';
 import { filterChatMessages, useStreamHandler } from '~/hooks/useStreamHandler';
 import KitPanel from './components/KitPanel';
-import { CustomKitFeature } from '~/crx/types';
+import { DefaultSectionKitMap, KitFeature } from '~/crx/types';
 
+interface ExtraFeatureProps {
+	prompt: string;
+	icon: React.ReactNode;
+	action: (...arg) => void;
+	CustomPanel?: React.FC<any>;
+}
+export interface SectionFeature extends KitFeature, ExtraFeatureProps {}
+
+let isSelectionChanged = false;
 const StyledDiv = styled.div`
 	position: absolute;
 
@@ -22,7 +31,7 @@ const StyledDiv = styled.div`
 		align-items: center;
 		gap: 8px;
 		background: #fff;
-		border-radius: 4px;
+		border-radius: 16px;
 		border: 0.5px solid #ccc;
 		box-shadow: 0 2px 4px #dddddd;
 		padding: 4px 10px;
@@ -46,7 +55,6 @@ const StyledDiv = styled.div`
 		z-index: 999;
 	}
 `;
-let isSelectionChanged = false;
 
 interface SelectionInfo {
 	selectionText: string;
@@ -54,22 +62,14 @@ interface SelectionInfo {
 	selectionContext: string;
 }
 
-export interface KitFeature extends CustomKitFeature {
-	icon?: React.ReactNode;
-	tip?: string;
-	action?: () => void;
-	Template?: React.FC<any>;
-	CustomPanel?: React.FC<any>;
-}
-
 interface SectionKitsProps {
 	[key: string]: any;
-	customFeatures: CustomKitFeature[];
+	kitFeatures: KitFeature[];
 }
-const SectionKits: React.FC<SectionKitsProps> = ({ customFeatures = [] }) => {
+const SectionKits: React.FC<SectionKitsProps> = ({ kitFeatures = [] }) => {
 	const [selectionInfo, setSelectionInfo] = useState<SelectionInfo>();
 	const [showKitPanel, setShowKitPanel] = useState(false);
-	const [currentFeature, setCurrentFeature] = useState<KitFeature>();
+	const [currentFeature, setCurrentFeature] = useState<SectionFeature>();
 	const [loading, setLoading] = useState(false);
 
 	const { handleStream, processing, chatMessages } = useStreamHandler();
@@ -89,13 +89,16 @@ const SectionKits: React.FC<SectionKitsProps> = ({ customFeatures = [] }) => {
 		if (isSelectionChanged && selection.toString().length > 0) {
 			if (selection && selection.rangeCount > 0) {
 				const range = selection.getRangeAt(0);
-				const rect = range.getBoundingClientRect();
+				// 折叠选区改为获取 focusNode
+				const rect = selection.isCollapsed
+					? (selection.focusNode as any).getBoundingClientRect()
+					: range.getBoundingClientRect();
 
 				setCurrentFeature(null);
 				setSelectionInfo({
 					selectionText: selection.toString(),
 					selectionRect: rect,
-					selectionContext: selection.anchorNode.textContent,
+					selectionContext: selection.focusNode.parentElement.textContent,
 				});
 				console.log('选中文本的边界框信息：', selection.toString(), rect);
 			}
@@ -124,7 +127,7 @@ const SectionKits: React.FC<SectionKitsProps> = ({ customFeatures = [] }) => {
 	const { top, left, height } = selectionRect;
 	const results = filterChatMessages(chatMessages, ['answer']);
 
-	const handleTranslate = (prompt: string) => {
+	const defaultAction = (prompt: string) => {
 		if (!processing) {
 			setLoading(true);
 			singleStreamChat(prompt)
@@ -138,48 +141,38 @@ const SectionKits: React.FC<SectionKitsProps> = ({ customFeatures = [] }) => {
 		}
 	};
 
-	const handleExplain = (prompt: string) => {
-		if (!processing) {
-			setLoading(true);
-			singleStreamChat(prompt)
-				.then((response) => {
-					setLoading(false);
-					handleStream(response.body);
-				})
-				.catch(() => {
-					setLoading(false);
-				});
-		}
-	};
-
-	const features: KitFeature[] = [
-		{
-			label: '翻译',
-			prompt: `根据上下文：${selectionContext}，翻译一下：${selectionText}`,
-			tip: '翻译',
+	const optionalKitPropsMap: Record<DefaultSectionKitMap, ExtraFeatureProps> = {
+		[DefaultSectionKitMap.TRANSLATE]: {
 			icon: <TranslationOutlined className='icon' />,
-			action: () => handleTranslate(features[0].prompt),
+			action: defaultAction,
+			prompt: `根据上下文："${selectionContext}"，翻译一下：${selectionText}。`,
 		},
-		{
-			label: '解释',
-			prompt: `根据上下文：${selectionContext}，解释一下：${selectionText}`,
-			tip: '解释',
+		[DefaultSectionKitMap.EXPLAIN]: {
 			icon: <BookOutlined className='icon' />,
-			action: () => handleExplain(features[1].prompt),
+			action: defaultAction,
+			prompt: `根据上下文："${selectionContext}"，解释：${selectionText}。`,
 		},
-		{
-			label: '朗读',
-			prompt: '',
-			tip: '朗读',
+		[DefaultSectionKitMap.READ]: {
 			icon: <SoundOutlined className='icon' />,
+			action: noop,
+			prompt: '',
 		},
-		...map(customFeatures, (item) => ({
-			...item,
-			prompt: item.prompt.replace('{selection}', selectionText),
-		})),
-	];
+	};
 
-	console.log('--- results', processing, results);
+	const features: SectionFeature[] = map(kitFeatures, (item) => {
+		const { key, prompt, isDefault } = item;
+
+		if (isDefault) {
+			const rest = optionalKitPropsMap[key];
+			return {
+				...item,
+				action: () => defaultAction(prompt),
+				...rest,
+			};
+		}
+	});
+
+	console.log('--- render', features, results);
 
 	const handleCloseKitPanel = () => {
 		setShowKitPanel(false);
@@ -195,25 +188,21 @@ const SectionKits: React.FC<SectionKitsProps> = ({ customFeatures = [] }) => {
 					style={{ top: top + window.scrollY + height + 10, left }}
 				>
 					{map(features, (feature, index) => {
-						const { tip, icon, action } = feature;
+						const { label, icon, action, prompt } = feature;
 						return (
 							<Tooltip
 								arrow={false}
 								key={index}
-								title={tip}
+								title={label}
 								getTooltipContainer={(triggerNode) => triggerNode.parentElement}
 							>
 								<div
 									className='feature'
-									onClick={
-										action
-											? debounce(() => {
-													setShowKitPanel(true);
-													setCurrentFeature(feature);
-													action();
-											  }, 300)
-											: noop
-									}
+									onClick={debounce(() => {
+										setShowKitPanel(true);
+										setCurrentFeature(feature);
+										action(prompt);
+									}, 300)}
 								>
 									{icon}
 								</div>

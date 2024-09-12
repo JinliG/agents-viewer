@@ -1,12 +1,20 @@
 import React, { useMemo } from 'react';
 import { styled } from 'styled-components';
-import { KitFeature } from '..';
-import { CloseOutlined } from '@ant-design/icons';
+import { SectionFeature } from '..';
+import {
+	CloseOutlined,
+	WechatWorkOutlined,
+	InfoCircleOutlined,
+} from '@ant-design/icons';
 import { ChatMessage } from '~/types/coze';
 import { map } from 'lodash';
+import LoadingDots from '~/components/LoadingDots';
+import { Button } from 'antd';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const StyledDiv = styled.div`
-	min-width: 300px;
+	min-width: 360px;
 	min-height: 80px;
 	background: #fff;
 	border-radius: 12px;
@@ -22,12 +30,34 @@ const StyledDiv = styled.div`
 	.result-text {
 		font-size: 14px;
 		font-weight: 500;
+		font-family: monospace;
+		line-height: 22px;
 		color: #333;
+		word-break: break-all;
 	}
 
 	.selection-text {
 		font-size: 12px;
 		color: #666;
+	}
+
+	.content {
+		margin-bottom: 16px;
+
+		.result-text {
+			min-height: 22px;
+		}
+	}
+
+	.footer {
+		.tips {
+			font-size: 12px;
+		}
+
+		.opts {
+			display: flex;
+			justify-content: space-between;
+		}
 	}
 `;
 
@@ -35,7 +65,7 @@ interface KitPanelProps {
 	[key: string]: any;
 	loading: boolean;
 	selectionText: string;
-	feature: KitFeature;
+	feature: SectionFeature;
 	results: ChatMessage[];
 	onClose: () => void;
 }
@@ -45,8 +75,9 @@ const KitPanel: React.FC<KitPanelProps> = ({
 	onClose,
 	selectionText,
 	results,
+	loading,
 }) => {
-	const { label, Template } = feature;
+	const { label } = feature;
 
 	const resultText = useMemo(
 		() => map(results, (item) => item.content).join(''),
@@ -61,13 +92,33 @@ const KitPanel: React.FC<KitPanelProps> = ({
 			</div>
 			<div className='content'>
 				<p className='selection-text'>{selectionText}</p>
-				{Template ? (
-					<Template />
-				) : (
-					<div className='result-text'>{resultText}</div>
-				)}
+				<div className='result-text'>
+					{loading ? (
+						<LoadingDots />
+					) : (
+						<Markdown remarkPlugins={[remarkGfm]}>{resultText}</Markdown>
+					)}
+				</div>
 			</div>
-			<div className='footer'></div>
+			<div className='footer'>
+				<div className='tips'>
+					<p>
+						<InfoCircleOutlined />
+						&nbsp; 内容生成将依据网页上下文
+					</p>
+				</div>
+				<div className='opts'>
+					<Button
+						size='small'
+						icon={<WechatWorkOutlined />}
+						style={{
+							fontSize: 12,
+						}}
+					>
+						在聊天中继续
+					</Button>
+				</div>
+			</div>
 		</StyledDiv>
 	);
 };

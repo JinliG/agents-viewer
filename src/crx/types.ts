@@ -10,15 +10,32 @@ export interface FloatKitOptions {
 	visible: boolean;
 }
 
-export interface CustomKitFeature {
+export enum DefaultSectionKitMap {
+	// 翻译
+	TRANSLATE = '$default_translate',
+	// 解释
+	EXPLAIN = '$default_explain',
+	// 朗读
+	READ = '$default_read',
+}
+
+export interface KitFeature {
+	// 唯一标识
+	key: string | DefaultSectionKitMap;
+	// 标题
 	label: string;
+	// 提示词
 	prompt: string;
+	// 是否是默认工具
+	isDefault: boolean;
+	// 是否折叠
+	isCollapsed?: boolean;
 }
 
 // 快捷工具
 export interface SectionKitOptions {
 	[key: string]: any;
-	customFeatures: CustomKitFeature[];
+	kitFeatures: KitFeature[];
 }
 
 // 全局配置

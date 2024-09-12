@@ -1,5 +1,6 @@
+import { useUnmount } from 'ahooks';
 import { filter } from 'lodash';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChatMessage, MessageType } from '~/types/coze';
 import { parseMultiJson } from '~/utils';
 
@@ -46,6 +47,12 @@ export function useStreamHandler<T>(): StreamHandlerResult<T> {
 
 		push();
 	};
+
+	// 卸载时清理状态
+	useUnmount(() => {
+		setBufferMessages([]);
+		setChatMessages([]);
+	});
 
 	return {
 		processing,

@@ -23,7 +23,6 @@ export function Injects(): React.ReactElement {
 		useState<SectionKitOptions>();
 
 	useEffect(() => {
-		console.log('--- rerended', document.location.href);
 		chrome.runtime.sendMessage(
 			{
 				type: CrxMessageTypesMap.GET_GLOBAL_OPTIONS,
@@ -34,6 +33,7 @@ export function Injects(): React.ReactElement {
 			} as CrxMessageRequest,
 			(response: GlobalOptions) => {
 				if (response) {
+					console.log('--- kit options', response);
 					setFloatKitOptions(response.floatKit);
 					setSectionKitOptions(response.sectionKit);
 				}
@@ -50,7 +50,7 @@ export function Injects(): React.ReactElement {
 	return (
 		<ShadowDom>
 			{renderFloatKits()}
-			<SectionKits customFeatures={sectionKitOptions?.customFeatures} />
+			<SectionKits kitFeatures={sectionKitOptions?.kitFeatures || []} />
 		</ShadowDom>
 	);
 }

@@ -1,5 +1,10 @@
 import { isEmpty } from 'lodash';
-import { CrxMessageRequest, CrxMessageTypesMap, GlobalOptions } from './types';
+import {
+	CrxMessageRequest,
+	CrxMessageTypesMap,
+	DefaultSectionKitMap,
+	GlobalOptions,
+} from './types';
 
 const globalOptionKeys: (keyof GlobalOptions)[] = [
 	'botStore',
@@ -17,7 +22,29 @@ const defaultGlobalOptions: GlobalOptions = {
 		visible: true,
 	},
 	sectionKit: {
-		customFeatures: [],
+		kitFeatures: [
+			{
+				key: DefaultSectionKitMap.TRANSLATE,
+				label: '翻译',
+				prompt: '',
+				isDefault: true,
+				isCollapsed: false,
+			},
+			{
+				key: DefaultSectionKitMap.EXPLAIN,
+				label: '解释',
+				prompt: '',
+				isDefault: true,
+				isCollapsed: false,
+			},
+			{
+				key: DefaultSectionKitMap.READ,
+				label: '朗读',
+				prompt: '',
+				isDefault: true,
+				isCollapsed: false,
+			},
+		],
 	},
 	user: {},
 };
