@@ -10,6 +10,7 @@ export interface FloatKitOptions {
 	visible: boolean;
 }
 
+// 默认快捷工具
 export enum DefaultSectionKitMap {
 	// 翻译
 	TRANSLATE = '$default_translate',
@@ -17,8 +18,15 @@ export enum DefaultSectionKitMap {
 	EXPLAIN = '$default_explain',
 	// 朗读
 	READ = '$default_read',
+	// 续写
+	CONTINUE = '$default_continue',
+	// 优化
+	OPTIMIZE = '$default_optimize',
+	// 校对
+	CORRECT = '$default_correct',
 }
 
+// 快捷工具功能
 export interface KitFeature {
 	// 唯一标识
 	key: string | DefaultSectionKitMap;
@@ -28,6 +36,10 @@ export interface KitFeature {
 	prompt: string;
 	// 是否是默认工具
 	isDefault: boolean;
+	// 描述
+	description?: string;
+	// 只有在写作模式下可用
+	isWritingOnly?: boolean;
 	// 是否折叠
 	isCollapsed?: boolean;
 }
@@ -35,6 +47,11 @@ export interface KitFeature {
 // 快捷工具
 export interface SectionKitOptions {
 	[key: string]: any;
+	// 触发模式
+	triggerMode: 'auto' | 'manual';
+	// 写作助手
+	writeHelper: boolean;
+	// 快捷工具组
 	kitFeatures: KitFeature[];
 }
 

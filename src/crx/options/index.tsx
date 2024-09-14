@@ -6,9 +6,10 @@ import {
 	CrxSourceMap,
 	GlobalOptions,
 } from '../types';
-import { Col, Row, Menu, Card } from 'antd';
+import { Col, Row, Menu } from 'antd';
 import { MenuItemType } from 'antd/es/menu/interface';
 import { find } from 'lodash';
+import SectionKitOptionsPanel from './components/SectionKit';
 
 interface OptionMenu extends MenuItemType {
 	Content: React.FC<any>;
@@ -19,17 +20,17 @@ const Options: React.FC = () => {
 		{
 			key: 'common',
 			label: '通用配置',
-			Content: React.lazy(() => import('./components/Common')),
+			Content: SectionKitOptionsPanel,
 		},
 		{
 			key: 'sectionKit',
 			label: '快捷菜单',
-			Content: React.lazy(() => import('./components/SectionKit')),
+			Content: SectionKitOptionsPanel,
 		},
 		{
 			key: 'botsMarket',
 			label: 'Agents 市场',
-			Content: React.lazy(() => import('./components/BotsMarket')),
+			Content: SectionKitOptionsPanel,
 		},
 	];
 
@@ -77,22 +78,28 @@ const Options: React.FC = () => {
 
 	return (
 		<div className={styles.options}>
-			<Row justify='center' align='middle' gutter={[24, 24]}>
-				<Col span={4} className={styles.sider}>
-					<Menu
-						className={styles.menu}
-						mode='vertical'
-						onClick={onMenuItemClick}
-						items={menuItems.map((item) => ({
-							key: item.key,
-							label: item.label,
-						}))}
-					/>
+			<Row justify='center' align='top' gutter={[24, 24]}>
+				<Col span={4}>
+					<div className={styles.sider}>
+						<Menu
+							className={styles.menu}
+							defaultActiveFirst
+							mode='vertical'
+							onClick={onMenuItemClick}
+							items={menuItems.map((item) => ({
+								key: item.key,
+								label: item.label,
+							}))}
+						/>
+					</div>
 				</Col>
-				<Col span={16} className={styles.content}>
-					<Card title={label}>
-						<Content />
-					</Card>
+				<Col span={20}>
+					<div className={styles.contentWrapper}>
+						<div className={styles.title}>{label}</div>
+						<div className={styles.content}>
+							<Content globalOptions={globalOptions} />
+						</div>
+					</div>
 				</Col>
 			</Row>
 		</div>

@@ -1,9 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import Popup from './index';
+import Options from './index';
 
 ReactDOM.createRoot(document.getElementById('options')!).render(
 	<React.StrictMode>
-		<Popup />
+		<Options />
 	</React.StrictMode>
 );
