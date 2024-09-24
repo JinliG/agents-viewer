@@ -8,22 +8,26 @@ import {
 	Radio,
 	Space,
 	Switch,
-	Tag,
 } from 'antd';
 import React, { useEffect, useState } from 'react';
-import { GlobalOptions, SectionKitOptions } from '~/crx/types';
+import {
+	CrxMessageRequest,
+	CrxMessageTypesMap,
+	CrxSourceMap,
+	GlobalOptions,
+	KitFeature,
+	SectionKitOptions,
+} from '~/crx/types';
 import styles from './index.module.less';
-import { map } from 'lodash';
 import classNames from 'classnames';
 import { useForm } from 'antd/es/form/Form';
+import FeatureManager from './FeatureManager';
+import { ContentPanelProps } from '../..';
 
-interface SectionKitOptionsPanelProps {
-	globalOptions?: GlobalOptions;
-}
-const SectionKitOptionsPanel: React.FC<SectionKitOptionsPanelProps> = ({
+const SectionKitOptionsPanel: React.FC<ContentPanelProps> = ({
 	globalOptions,
+	refetchOptions,
 }) => {
-	const { sectionKit } = globalOptions || {};
 	const [form] = useForm();
 
 	const [sectionKitOptions, setSectionKitOptions] =
@@ -31,24 +35,63 @@ const SectionKitOptionsPanel: React.FC<SectionKitOptionsPanelProps> = ({
 	const [isModalVisible, setIsModalVisible] = useState(false);
 
 	useEffect(() => {
-		setSectionKitOptions(sectionKit);
-	}, [sectionKit]);
+		setSectionKitOptions(globalOptions?.sectionKit);
+	}, [globalOptions?.sectionKit]);
 
 	const { triggerMode, writeHelper, kitFeatures } = sectionKitOptions || {};
+
+	const handleUpdateSectionKitOptions = (values, callback?: () => void) => {
+		chrome.runtime.sendMessage(
+			{
+				type: CrxMessageTypesMap.UPDATE_GLOBAL_OPTIONS,
+				source: CrxSourceMap.OPTIONS,
+				payload: {
+					...globalOptions,
+					sectionKit: {
+						...sectionKitOptions,
+						...values,
+					},
+				},
+			} as CrxMessageRequest,
+			(response: GlobalOptions) => {
+				if (response) {
+					callback?.();
+				}
+			}
+		);
+	};
+
+	const closeModal = () => {
+		form.resetFields();
+		setIsModalVisible(false);
+	};
 
 	const handleModalOk = () => {
 		form
 			.validateFields()
 			.then((values) => {
-				// TODO: 提交数据
+				const { name, description, prompt, isCollapsed } = values;
+				const newKitFeature: KitFeature = {
+					key: name,
+					label: name,
+					prompt,
+					isCollapsed,
+					description,
+					isDefault: false,
+				};
+				handleUpdateSectionKitOptions(
+					{
+						kitFeatures: [...kitFeatures, newKitFeature],
+					},
+					() => {
+						refetchOptions();
+						closeModal();
+					}
+				);
 			})
 			.catch((errorInfo) => {
 				console.log('Failed:', errorInfo);
 			});
-	};
-
-	const handleModalCancel = () => {
-		setIsModalVisible(false);
 	};
 
 	return (
@@ -84,39 +127,18 @@ const SectionKitOptionsPanel: React.FC<SectionKitOptionsPanelProps> = ({
 			<div className={styles.section}>
 				<div className={classNames(styles.flex, styles.title)}>
 					<div>快捷菜单工具</div>
-					<Button>自定义工具</Button>
+					<Button onClick={() => setIsModalVisible(true)}>自定义工具</Button>
 				</div>
-				<Space className={styles.manager}>
-					{map(kitFeatures, ({ key, label, description, isDefault }) => {
-						return (
-							<Card
-								className={styles.card}
-								key={key}
-								size='small'
-								title={
-									<Space>
-										<div>{label}</div>
-										{isDefault && <Tag style={{ fontWeight: 400 }}>预置</Tag>}
-									</Space>
-								}
-								extra={
-									<Space>
-										是否折叠
-										<Switch />
-									</Space>
-								}
-							>
-								<pre>{description}</pre>
-							</Card>
-						);
-					})}
-				</Space>
+				<FeatureManager
+					kitFeatures={kitFeatures}
+					updateSectionKitOptions={handleUpdateSectionKitOptions}
+				/>
 			</div>
 			<Modal
 				title='新建自定义工具'
 				open={isModalVisible}
 				onOk={handleModalOk}
-				onCancel={handleModalCancel}
+				onCancel={closeModal}
 			>
 				<Form
 					form={form}
@@ -125,7 +147,7 @@ const SectionKitOptionsPanel: React.FC<SectionKitOptionsPanelProps> = ({
 						name: '',
 						description: '',
 						isCollapsed: false,
-						placeholder: '',
+						prompt: '',
 					}}
 				>
 					<Form.Item
@@ -136,15 +158,15 @@ const SectionKitOptionsPanel: React.FC<SectionKitOptionsPanelProps> = ({
 						<Input />
 					</Form.Item>
 					<Form.Item
-						name='placeholder'
+						name='prompt'
 						label='提示词'
 						rules={[{ required: true, message: '请输入提示词' }]}
 					>
 						<Input.TextArea rows={4} />
-						<p style={{ marginTop: 8 }}>
-							{`提示词中使用 {{selection}} 代表划词的内容`}
-						</p>
 					</Form.Item>
+					<p style={{ marginTop: 8 }}>
+						{`提示词中使用 {{selection}} 代表划词的内容`}
+					</p>
 					<Form.Item
 						name='isCollapsed'
 						label='是否折叠'
@@ -152,11 +174,7 @@ const SectionKitOptionsPanel: React.FC<SectionKitOptionsPanelProps> = ({
 					>
 						<Switch />
 					</Form.Item>
-					<Form.Item
-						name='description'
-						label='描述'
-						rules={[{ required: true, message: '请输入描述' }]}
-					>
+					<Form.Item name='description' label='描述'>
 						<Input.TextArea rows={4} />
 					</Form.Item>
 				</Form>

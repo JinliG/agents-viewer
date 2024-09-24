@@ -22,8 +22,6 @@ export enum DefaultSectionKitMap {
 	CONTINUE = '$default_continue',
 	// 优化
 	OPTIMIZE = '$default_optimize',
-	// 校对
-	CORRECT = '$default_correct',
 }
 
 // 快捷工具功能
@@ -38,10 +36,10 @@ export interface KitFeature {
 	isDefault: boolean;
 	// 描述
 	description?: string;
-	// 只有在写作模式下可用
-	isWritingOnly?: boolean;
 	// 是否折叠
 	isCollapsed?: boolean;
+	// 只有在写作模式下可用
+	isWritingOnly?: boolean;
 }
 
 // 快捷工具

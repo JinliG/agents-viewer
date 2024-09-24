@@ -15,6 +15,11 @@ interface OptionMenu extends MenuItemType {
 	Content: React.FC<any>;
 }
 
+export interface ContentPanelProps {
+	globalOptions: GlobalOptions;
+	refetchOptions: () => void;
+}
+
 const Options: React.FC = () => {
 	const menuItems: OptionMenu[] = [
 		{
@@ -46,7 +51,7 @@ const Options: React.FC = () => {
 			} as CrxMessageRequest,
 			(response: GlobalOptions) => {
 				if (response) {
-					setGlobalOptions(response);
+					console.log('--- response', response);
 				}
 			}
 		);
@@ -97,7 +102,10 @@ const Options: React.FC = () => {
 					<div className={styles.contentWrapper}>
 						<div className={styles.title}>{label}</div>
 						<div className={styles.content}>
-							<Content globalOptions={globalOptions} />
+							<Content
+								globalOptions={globalOptions}
+								refetchOptions={handleGetGlobalOptions}
+							/>
 						</div>
 					</div>
 				</Col>

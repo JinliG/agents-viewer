@@ -141,7 +141,9 @@ const SectionKits: React.FC<SectionKitsProps> = ({ kitFeatures = [] }) => {
 		}
 	};
 
-	const optionalKitPropsMap: Record<DefaultSectionKitMap, ExtraFeatureProps> = {
+	const optionalKitPropsMap: Partial<
+		Record<DefaultSectionKitMap, ExtraFeatureProps>
+	> = {
 		[DefaultSectionKitMap.TRANSLATE]: {
 			icon: <TranslationOutlined className='icon' />,
 			action: defaultAction,
@@ -151,6 +153,16 @@ const SectionKits: React.FC<SectionKitsProps> = ({ kitFeatures = [] }) => {
 			icon: <BookOutlined className='icon' />,
 			action: defaultAction,
 			prompt: `根据上下文："${selectionContext}"，解释：${selectionText}。`,
+		},
+		[DefaultSectionKitMap.CONTINUE]: {
+			icon: <TranslationOutlined className='icon' />,
+			action: defaultAction,
+			prompt: `根据上下文："${selectionContext}"，续写以下内容：${selectionText}。`,
+		},
+		[DefaultSectionKitMap.OPTIMIZE]: {
+			icon: <BookOutlined className='icon' />,
+			action: defaultAction,
+			prompt: `根据上下文："${selectionContext}"，优化以下内容：${selectionText}。`,
 		},
 		[DefaultSectionKitMap.READ]: {
 			icon: <SoundOutlined className='icon' />,
@@ -169,10 +181,18 @@ const SectionKits: React.FC<SectionKitsProps> = ({ kitFeatures = [] }) => {
 				action: () => defaultAction(prompt),
 				...rest,
 			};
+		} else {
+			const realPrompt = prompt.replace(
+				/\{\{selection\}\}/g,
+				`"${selectionText}"`
+			);
+			return {
+				...item,
+				prompt: realPrompt,
+				action: () => defaultAction(realPrompt),
+			};
 		}
 	});
-
-	console.log('--- render', features, results);
 
 	const handleCloseKitPanel = () => {
 		setShowKitPanel(false);

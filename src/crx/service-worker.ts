@@ -57,13 +57,6 @@ const defaultGlobalOptions: GlobalOptions = {
 				isDefault: true,
 				isWritingOnly: true,
 			},
-			{
-				key: DefaultSectionKitMap.CORRECT,
-				label: '校对',
-				prompt: '',
-				isDefault: true,
-				isWritingOnly: true,
-			},
 		],
 	},
 	user: {},
@@ -105,10 +98,11 @@ chrome.runtime.onMessage.addListener(
 				});
 				break;
 			case CrxMessageTypesMap.UPDATE_GLOBAL_OPTIONS:
-				const { options } = request;
-				setGlobalOptions(options).then(() => {
-					sendResponse({ success: true });
-				});
+				if (payload) {
+					setGlobalOptions(payload).then(() => {
+						sendResponse({ success: true });
+					});
+				}
 				break;
 			case CrxMessageTypesMap.OPEN_SIDE_PANEL:
 				chrome.sidePanel

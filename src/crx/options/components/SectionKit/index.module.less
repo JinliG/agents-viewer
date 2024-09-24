@@ -1,12 +1,18 @@
 .container {
 	.section {
 		padding: 20px 0;
-		border-bottom: 0.5px solid #e6e6e6;
+		// border-bottom: 0.5px solid #e6e6e6;
 
 		.title {
 			font-size: 16px;
 			font-weight: 500;
 			margin-bottom: 20px;
+		}
+
+		.coTitle {
+			font-size: 14px;
+			font-weight: 500;
+			margin-bottom: 16px;
 		}
 
 		.flex {
@@ -16,11 +22,15 @@
 			gap: 32px;
 		}
 	}
+}
 
-	.manager {
-		flex-wrap: wrap;
-		justify-content: space-between;
-		gap: 20px;
+.manager {
+	flex-wrap: wrap;
+
+	.list {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
 		.card {
 			width: 300px;
 		}

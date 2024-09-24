@@ -125,3 +125,18 @@ export function formatBytes(bytes: number, decimals = 2): string {
 
 	return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 }
+
+function hashString(str: string): number {
+	let hash = 0;
+	for (let i = 0; i < str.length; i++) {
+		const char = str.charCodeAt(i);
+		hash = (hash << 5) - hash + char;
+		hash |= 0; // Convert to 32bit integer
+	}
+	return hash;
+}
+
+export function generateUniqueKey(name: string): string {
+	const hash = hashString(name);
+	return `hash_${hash}`;
+}
