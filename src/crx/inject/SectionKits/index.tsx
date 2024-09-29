@@ -6,7 +6,7 @@ import {
 	TranslationOutlined,
 } from '@ant-design/icons';
 import { Tooltip } from 'antd';
-import { debounce, map, noop } from 'lodash';
+import { debounce, map } from 'lodash';
 import { singleStreamChat } from '~/network/coze';
 import { filterChatMessages, useStreamHandler } from '~/hooks/useStreamHandler';
 import KitPanel from './components/KitPanel';
@@ -152,7 +152,7 @@ const SectionKits: React.FC<SectionKitsProps> = ({ kitFeatures = [] }) => {
 		[DefaultSectionKitMap.EXPLAIN]: {
 			icon: <BookOutlined className='icon' />,
 			action: defaultAction,
-			prompt: `根据上下文："${selectionContext}"，解释：${selectionText}。`,
+			prompt: `根据上下文："${selectionContext}"，解释：${selectionText}。如无上下文，则直接解释。`,
 		},
 		[DefaultSectionKitMap.CONTINUE]: {
 			icon: <TranslationOutlined className='icon' />,
@@ -166,8 +166,8 @@ const SectionKits: React.FC<SectionKitsProps> = ({ kitFeatures = [] }) => {
 		},
 		[DefaultSectionKitMap.READ]: {
 			icon: <SoundOutlined className='icon' />,
-			action: noop,
-			prompt: '',
+			action: defaultAction,
+			prompt: `朗读以下内容："${selectionText}"。直接返回语音链接不要其他文本。`,
 		},
 	};
 
