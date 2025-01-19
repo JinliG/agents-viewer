@@ -18,7 +18,8 @@ import NotFound from '~/pages/NotFound';
 import { isChromeExtension } from '~/utils';
 
 export default function Router() {
-	const { isLoggedIn, setUserInfo, setIsLoggedIn } = useAuthContext();
+	const { setUserInfo, setIsLoggedIn } = useAuthContext();
+	const isLoggedIn = true;
 
 	const Router = isChromeExtension() ? HashRouter : BrowserRouter;
 
