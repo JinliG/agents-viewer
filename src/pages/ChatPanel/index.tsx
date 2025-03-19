@@ -113,10 +113,9 @@ export default function ChatPanel(props: ChatPanelProps) {
 						const chunk = new TextDecoder().decode(value);
 						const list = parseMultiJson(chunk);
 						const groupedByType = groupBy(list, (item) => item?.type);
-						const { answer = [], ...rest } = groupedByType as {
+						const { answer = [] } = groupedByType as {
 							[key in MessageType]: ChatMessage[];
 						};
-						console.log('--- typed messages', groupedByType);
 
 						bufferMessages = bufferMessages.concat(
 							answer.map(({ content, id, role }) => ({
@@ -140,7 +139,7 @@ export default function ChatPanel(props: ChatPanelProps) {
 		},
 	});
 
-	async function sendMessage(e: FormEvent<HTMLFormElement>) {
+	async function sendMessage(e: FormEvent<any>) {
 		e.preventDefault();
 		if (!streamMessages.length) {
 			await new Promise((resolve) => setTimeout(resolve, 300));
@@ -200,7 +199,6 @@ export default function ChatPanel(props: ChatPanelProps) {
 					autoSize={false}
 					onChange={handleInputChange}
 					rows={3}
-					// @ts-ignore
 					onPressEnter={sendMessage}
 					style={{
 						resize: 'none',

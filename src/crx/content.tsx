@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import FloatKits from './inject/FloatKits/index.tsx';
-import ShadowDom from './shadowDom';
+import ShadowDom from './ShadowDom';
 import { useCallback, useEffect, useState } from 'react';
 import {
 	CrxMessageRequest,

@@ -12,6 +12,7 @@ dist
 dist*
 *dist
 *.local
+.yarn
 
 # Editor directories and files
 .vscode/*

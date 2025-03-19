@@ -1,7 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { WechatWorkOutlined, TranslationOutlined } from '@ant-design/icons';
+import { GoogleCircleFilled, TranslationOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
-import classNames from 'classnames';
 import { CrxMessageTypesMap, CrxSourceMap } from '~/crx/types';
 import {
 	TextNode,
@@ -11,47 +10,9 @@ import {
 
 import { YandexTranslator } from '@translate-tools/core/esm/translators/YandexTranslator';
 import { forEach } from 'lodash';
+import { Button, Flex } from 'antd';
+
 const translator = new YandexTranslator();
-
-const StyledDiv = styled.div`
-	position: relative;
-	z-index: 999;
-
-	.floatKits {
-		position: fixed;
-		right: 0;
-		bottom: 20%;
-
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 12px;
-
-		.marker {
-			width: 36px;
-			height: 36px;
-			background: #fff;
-			border-radius: 50%;
-			box-shadow: 0 2px 4px #dddddd;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			cursor: pointer;
-
-			.icon {
-				font-size: 16px;
-			}
-		}
-		.mainEntry {
-			width: 48px;
-			height: 48px;
-
-			.icon {
-				font-size: 24px;
-			}
-		}
-	}
-`;
 
 const renderTranslateResult = (result: string[], textNodes: TextNode[]) => {
 	let transWrapper = null;
@@ -99,24 +60,28 @@ const renderTranslateResult = (result: string[], textNodes: TextNode[]) => {
 	});
 };
 
+const removeTranslateResult = () => {
+	const transNodes = document.querySelectorAll('avr-trans');
+	forEach(transNodes, (item) => {
+		item.remove();
+	});
+};
+
 const FloatKits: React.FC<any> = () => {
 	const floatKitsRef = useRef<HTMLDivElement>();
-	const [toggleOpened, setToggleOpened] = useState(false);
-
-	// 当前 tab 是否已翻译
+	const [expanded, setExpanded] = useState(false);
 	const [translated, setTranslated] = useState(false);
+	const [translating, setTranslating] = useState(false);
 
 	const onClickEntry = () => {
 		chrome.runtime.sendMessage(
 			{
-				type: toggleOpened
-					? CrxMessageTypesMap.CLOSE_SIDE_PANEL
-					: CrxMessageTypesMap.OPEN_SIDE_PANEL,
+				type: CrxMessageTypesMap.OPEN_SIDE_PANEL,
 				source: CrxSourceMap.INJECT,
 			},
 			(response) => {
 				if (response?.success) {
-					setToggleOpened((state) => !state);
+					console.log('--- ');
 				}
 			}
 		);
@@ -141,22 +106,30 @@ const FloatKits: React.FC<any> = () => {
 	};
 
 	const handleTranslate = () => {
+		if (translated) {
+			removeTranslateResult();
+			setTranslated(false);
+			return;
+		}
 		const textNodes = getTextNodesWithXPath(document.body);
 		const originalTexts = textNodes.map(({ text }) => text);
-		// console.log('--- textNodes', textNodes);
 
+		setTranslating(true);
 		injectTransNodeStyle();
 		translator
 			.translateBatch(originalTexts, 'en', 'zh')
 			.then((translatedTexts) => {
+				setTranslated(true);
 				renderTranslateResult(translatedTexts, textNodes);
+			})
+			.finally(() => {
+				setTranslating(false);
 			});
 	};
 
 	return (
 		<StyledDiv>
-			<div
-				className='floatKits'
+			<FloatKitsDiv
 				ref={floatKitsRef}
 				draggable
 				onDrag={(e) => {
@@ -169,18 +142,107 @@ const FloatKits: React.FC<any> = () => {
 					e.preventDefault();
 					floatKitsRef.current.style.top = `${e.clientY}px`;
 				}}
+				onMouseEnter={(e) => {
+					e.preventDefault();
+					setExpanded(true);
+				}}
+				onMouseLeave={(e) => {
+					e.preventDefault();
+					setExpanded(false);
+				}}
 			>
-				<div
-					className={classNames('marker', 'mainEntry')}
+				<Button
+					shape='circle'
+					className='mainEntry'
 					onClick={onClickEntry}
+					icon={<GoogleCircleFilled className='icon' />}
+				/>
+				<MarkersWrapper
+					className={expanded || translating ? 'visible' : ''}
+					vertical
+					gap={8}
 				>
-					<WechatWorkOutlined className='icon' />
-				</div>
-				<div className='marker' onClick={handleTranslate}>
-					<TranslationOutlined className='icon' />
-				</div>
-			</div>
+					<MarkerButton
+						type='text'
+						shape='circle'
+						className={translated ? 'checked' : ''}
+						onClick={handleTranslate}
+						loading={translating}
+						icon={<TranslationOutlined />}
+					/>
+				</MarkersWrapper>
+			</FloatKitsDiv>
 		</StyledDiv>
 	);
 };
+
 export default FloatKits;
+
+const StyledDiv = styled.div`
+	position: relative;
+	z-index: 999;
+
+	.icon {
+		font-size: 24px;
+	}
+`;
+
+const FloatKitsDiv = styled.div`
+	position: fixed;
+	right: 8px;
+	top: 40%;
+
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+
+	.mainEntry {
+		width: 48px;
+		height: 48px;
+
+		.icon {
+			font-size: 24px;
+		}
+	}
+`;
+
+const MarkersWrapper = styled(Flex)`
+	position: sticky;
+	padding: 4px;
+	background: #ffffff;
+	border-radius: 16px;
+	border: 1px solid #e8e8e8;
+	top: 48px;
+
+	display: none;
+	opacity: 0;
+	transition: opacity, top 0.2s ease-in-out;
+
+	&.visible {
+		top: calc(48px + 6px);
+		display: flex;
+		opacity: 1;
+		margin-top: 0;
+	}
+`;
+
+const MarkerButton = styled(Button)`
+	width: 36px;
+	height: 36px;
+	border-radius: 50%;
+
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+
+	&.checked {
+		background: var(--color-primary);
+		color: #ffffff;
+	}
+
+	&:hover {
+		background: #f5f5f5;
+	}
+`;

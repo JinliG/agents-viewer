@@ -1,6 +1,6 @@
 import axios from 'axios';
 import queryString from 'query-string';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuthContext } from '~/context/AuthContextProvider';
 import auth from '~/network/auth';
 

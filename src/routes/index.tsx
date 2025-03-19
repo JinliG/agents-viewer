@@ -8,6 +8,7 @@ import {
 	Route,
 	redirect,
 } from 'react-router-dom';
+import { mockUser } from '~/constant';
 import { useAuthContext } from '~/context/AuthContextProvider';
 import FeaturesContextProvider from '~/context/FeaturesContextProvider';
 import auth from '~/network/auth';
@@ -18,14 +19,19 @@ import NotFound from '~/pages/NotFound';
 import { isChromeExtension } from '~/utils';
 
 export default function Router() {
-	const { setUserInfo, setIsLoggedIn } = useAuthContext();
-	const isLoggedIn = true;
-
+	const { setUserInfo, setIsLoggedIn, isLoggedIn } = useAuthContext();
 	const Router = isChromeExtension() ? HashRouter : BrowserRouter;
 
 	useEffect(() => {
 		// 如果存在token，则验证用户认证
 		const accessToken = auth.getToken();
+		// TODO: mock method
+		if (accessToken === 'mock') {
+			setUserInfo(mockUser);
+			setIsLoggedIn(true);
+			return;
+		}
+
 		if (accessToken) {
 			auth
 				.getCurrentUser()
@@ -40,7 +46,7 @@ export default function Router() {
 					}
 				})
 				.catch((err) => {
-					console.error('--- ', err);
+					console.error(err);
 				});
 		} else {
 			setIsLoggedIn(false);

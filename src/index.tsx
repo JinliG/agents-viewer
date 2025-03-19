@@ -1,17 +1,12 @@
-import { ToastContainer } from 'react-toastify';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import APP from './App';
+import { isChromeExtension } from './utils';
 
-import styles from './index.module.less';
+console.log('Running in Chrome extension:', isChromeExtension());
 
-import 'react-toastify/dist/ReactToastify.css';
-
-import Router from './routes';
-function IndexSider() {
-	return (
-		<div className={styles.sider}>
-			<Router />
-			<ToastContainer />
-		</div>
-	);
-}
-
-export default IndexSider;
+ReactDOM.createRoot(document.getElementById('root')!).render(
+	<React.StrictMode>
+		<APP />
+	</React.StrictMode>
+);

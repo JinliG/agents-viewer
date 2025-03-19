@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { StyleSheetManager } from 'styled-components';
 import { StyleProvider } from '@ant-design/cssinjs';
+import '~/styles/index.less';
+import AntdProvider from '~/context/AntdProvider';
 
 export default function ShadowDom({
 	parentElement = document.body,
@@ -51,7 +53,7 @@ export default function ShadowDom({
 	return ReactDOM.createPortal(
 		<StyleProvider container={shadowRoot}>
 			<StyleSheetManager target={shadowRoot?.querySelector('head')}>
-				{children}
+				<AntdProvider>{children}</AntdProvider>
 			</StyleSheetManager>
 		</StyleProvider>,
 		shadowRoot
