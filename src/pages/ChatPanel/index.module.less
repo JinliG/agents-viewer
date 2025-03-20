@@ -38,8 +38,13 @@
 			border-bottom: unset;
 			border-bottom-left-radius: 0;
 			border-bottom-right-radius: 0;
-
 			.innerPadding;
+
+			&:focus,
+			&:hover {
+				border-color: var(--color-border);
+				box-shadow: unset;
+			}
 		}
 
 		.innerTools {

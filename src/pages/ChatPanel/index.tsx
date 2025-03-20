@@ -23,6 +23,7 @@ import styles from './index.module.less';
 import Uploader from './components/Uploader';
 import { BotMessage, BotMessageRole } from '~/types';
 import classNames from 'classnames';
+import { useAuthContext } from '~/context/AuthContextProvider';
 
 function getContentId(str: string) {
 	return encodeURIComponent(str).replace(/[.*+?^${}()|[\]\\]/g, '-');
@@ -62,6 +63,7 @@ export default function ChatPanel(props: ChatPanelProps) {
 	const { botId } = props;
 	const [isWaitingAnswer, setIsWaitingAnswer] = useState(false);
 	const [fileList, setFileList] = useState<FileInfo[]>([]);
+	const { userInfo } = useAuthContext();
 
 	const {
 		messages: streamMessages,
@@ -156,8 +158,7 @@ export default function ChatPanel(props: ChatPanelProps) {
 				},
 				body: {
 					bot_id: botId,
-					// TODO: 单独 userId
-					user_id: 'Jinli',
+					user_id: userInfo.id,
 					additional_messages: convertInputToEnterMessage(input, fileList),
 					auto_save_history: true,
 					stream: true,
@@ -174,7 +175,6 @@ export default function ChatPanel(props: ChatPanelProps) {
 	const removeFile = (id: string) => {
 		setFileList((state) => state.filter((item) => item.id !== id));
 	};
-	// console.log('--- isWaitingAnswer', isWaitingAnswer);
 
 	return (
 		<div className={styles.chatPanel}>

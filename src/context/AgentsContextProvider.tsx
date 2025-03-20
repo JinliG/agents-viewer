@@ -3,23 +3,24 @@ import React, { useEffect, useState } from 'react';
 
 import { getBotList } from '~/network/coze';
 import ChatPanel from '~/pages/ChatPanel';
-import { FeaturesContext } from '.';
+import { AgentsContext } from '.';
 
-export interface IFeature {
+export interface IAgent {
 	key: string;
 	name: string;
 	icon: string;
 	botId?: string;
 	botAvatar?: string;
+	active?: boolean;
 	Comp: (props?: any) => React.JSX.Element;
 }
 
-export const useFeaturesContext = () => React.useContext(FeaturesContext);
+export const useAgentsContext = () => React.useContext(AgentsContext);
 
-const defaults: IFeature[] = [];
-const FeaturesContextProvider: React.FC<any> = ({ children }) => {
-	const [features, setFeatures] = useState<IFeature[]>([]);
-	const [currentFeature, setCurrentFeature] = useState<IFeature | null>(null);
+const defaults: IAgent[] = [];
+const AgentsContextProvider: React.FC<any> = ({ children }) => {
+	const [agents, setAgents] = useState<IAgent[]>([]);
+	const [current, setCurrent] = useState<IAgent | null>(null);
 	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
@@ -29,16 +30,17 @@ const FeaturesContextProvider: React.FC<any> = ({ children }) => {
 				setLoading(false);
 				if (res.code === 0) {
 					const { space_bots } = res.data;
-					const botFeatures = map(space_bots, (item) => ({
+					const botFeatures = map(space_bots, (item, index) => ({
 						key: item.bot_id,
 						name: item.bot_name,
 						icon: item.icon_url,
 						botId: item.bot_id,
 						botAvatar: item.icon_url,
+						active: index <= 5,
 						Comp: ChatPanel,
 					}));
-					setFeatures(() => [...botFeatures, ...defaults]);
-					setCurrentFeature(botFeatures[0]);
+					setAgents(() => [...botFeatures, ...defaults]);
+					setCurrent(botFeatures[0]);
 				}
 			})
 			.finally(() => {
@@ -48,16 +50,15 @@ const FeaturesContextProvider: React.FC<any> = ({ children }) => {
 
 	const values = {
 		loading,
-		features,
-		currentFeature,
-		setCurrentFeature,
+		agents,
+		current,
+		setCurrent,
+		setAgents,
 	};
 
 	return (
-		<FeaturesContext.Provider value={values}>
-			{children}
-		</FeaturesContext.Provider>
+		<AgentsContext.Provider value={values}>{children}</AgentsContext.Provider>
 	);
 };
 
-export default FeaturesContextProvider;
+export default AgentsContextProvider;

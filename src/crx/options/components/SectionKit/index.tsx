@@ -22,7 +22,7 @@ import styles from './index.module.less';
 import classNames from 'classnames';
 import { useForm } from 'antd/es/form/Form';
 import FeatureManager from './FeatureManager';
-import { ContentPanelProps } from '../..';
+import { ContentPanelProps } from '../../App';
 
 const SectionKitOptionsPanel: React.FC<ContentPanelProps> = ({
 	globalOptions,
@@ -94,20 +94,41 @@ const SectionKitOptionsPanel: React.FC<ContentPanelProps> = ({
 			});
 	};
 
+	const onChangeTriggerMode = (mode: 'auto' | 'manual') => {
+		setSectionKitOptions((state) => ({
+			...state,
+			triggerMode: mode,
+		}));
+	};
+
 	return (
 		<div className={styles.container}>
 			<div className={styles.section}>
 				<div className={styles.title}>触发</div>
 				<div className={styles.flex}>
 					<Card
-						cover={<Image src='https://s4.ax1x.com/2021/12/22/TQT3rj.png' />}
+						cover={
+							<Image
+								preview={false}
+								src='https://s21.ax1x.com/2025/03/20/pEwwgEt.jpg'
+							/>
+						}
+						hoverable
+						onClick={() => onChangeTriggerMode('auto')}
 					>
 						<Radio checked={triggerMode === 'auto'}>
 							<div>划词立刻展示</div>
 						</Radio>
 					</Card>
 					<Card
-						cover={<Image src='https://s4.ax1x.com/2021/12/22/TQT3rj.png' />}
+						cover={
+							<Image
+								preview={false}
+								src='https://s21.ax1x.com/2025/03/20/pEwwgEt.jpg'
+							/>
+						}
+						hoverable
+						onClick={() => onChangeTriggerMode('manual')}
 					>
 						<Radio checked={triggerMode === 'manual'}>
 							<div>划词后快捷键展示</div>
@@ -117,9 +138,24 @@ const SectionKitOptionsPanel: React.FC<ContentPanelProps> = ({
 			</div>
 			<div className={styles.section}>
 				<div className={styles.title}>写作助手</div>
-				<Card cover={<Image src='https://s4.ax1x.com/2021/12/22/TQT3rj.png' />}>
+				<Card
+					cover={
+						<Image
+							preview={false}
+							src='https://s21.ax1x.com/2025/03/20/pEwwgEt.jpg'
+						/>
+					}
+				>
 					<Space>
-						<Switch checked={writeHelper}></Switch>
+						<Switch
+							checked={writeHelper}
+							onChange={(checked) => {
+								setSectionKitOptions((state) => ({
+									...state,
+									writeHelper: checked,
+								}));
+							}}
+						/>
 						在编辑器内启动写作助手
 					</Space>
 				</Card>
@@ -131,7 +167,7 @@ const SectionKitOptionsPanel: React.FC<ContentPanelProps> = ({
 				</div>
 				<FeatureManager
 					kitFeatures={kitFeatures}
-					updateSectionKitOptions={handleUpdateSectionKitOptions}
+					updateKitFeatures={handleUpdateSectionKitOptions}
 				/>
 			</div>
 			<Modal

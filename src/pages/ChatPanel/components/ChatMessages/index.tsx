@@ -3,7 +3,7 @@ import { forEach, groupBy, isEmpty, map } from 'lodash';
 import { useMemo, useState } from 'react';
 
 import { useAuthContext } from '~/context/AuthContextProvider';
-import { useFeaturesContext } from '~/context/FeaturesContextProvider';
+import { useAgentsContext } from '~/context/AgentsContextProvider';
 import { BotMessage, BotMessageRole } from '~/types';
 import Markdown from 'react-markdown';
 
@@ -29,7 +29,7 @@ interface ChatMessageBubbleProps {
 function BubbleHeader(bubble: BubbleProps) {
 	const { role } = bubble;
 	const { userInfo } = useAuthContext();
-	const { currentFeature } = useFeaturesContext();
+	const { current: currentFeature } = useAgentsContext();
 	const { botAvatar } = currentFeature || {};
 
 	const avatar = useMemo(() => {
@@ -80,7 +80,9 @@ const CustomImg = ({ src, alt, ...props }) => {
 
 function ChatMessageBubble(props: ChatMessageBubbleProps) {
 	const { bubble } = props;
-	let { messages, role } = bubble || {};
+	const { role } = bubble || {};
+	let messages = bubble.messages;
+
 	let multiModalMessages = [];
 
 	if (role === BotMessageRole.User) {
@@ -130,10 +132,6 @@ interface ChatMessageProps {
 export default function ChatMessages(props: ChatMessageProps) {
 	const { streamMessages, isWaitingAnswer } = props;
 
-	if (isEmpty(streamMessages)) {
-		return null;
-	}
-
 	const bubbleList = useMemo<Array<BubbleProps>>(() => {
 		const list: Array<BubbleProps> = [];
 		let currentBubble: BubbleProps | null = null;
@@ -178,6 +176,10 @@ export default function ChatMessages(props: ChatMessageProps) {
 
 		return list;
 	}, [streamMessages]);
+
+	if (isEmpty(streamMessages)) {
+		return null;
+	}
 
 	return (
 		<div className='chat-message'>

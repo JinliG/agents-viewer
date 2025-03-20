@@ -24,12 +24,12 @@
 	.sider {
 		width: 48px;
 		padding: 8px 0;
-		background-color: var(--color-background);
+		background-color: var(--color-background-soft);
 		display: flex;
 		justify-content: space-between;
 		flex-direction: column;
 
-		.features {
+		.agentList {
 			display: flex;
 			gap: 12px;
 			flex-direction: column;
@@ -38,26 +38,30 @@
 			.block {
 				padding: 6px;
 
-				&.active {
-					background-color: #fff;
-					border-radius: 6px;
-				}
 				.icon {
-					width: 24px;
-					height: 24px;
+					width: 28px;
+					height: 28px;
+					border-radius: 50%;
 				}
 
 				&:hover {
 					cursor: pointer;
-					background-color: #fff;
-					border-radius: 6px;
+					background-color: var(--color-background);
+					border-radius: 8px;
+					border: 0.5px solid var(--color-primary);
+				}
+
+				&.active {
+					background-color: var(--color-background);
+					border-radius: 8px;
+					border: 0.5px solid var(--color-primary);
 				}
 			}
 		}
 
 		.setting {
 			display: flex;
-			gap: 12px;
+			gap: 16px;
 			flex-direction: column;
 			align-items: center;
 		}

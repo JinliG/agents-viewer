@@ -129,19 +129,19 @@ const DraggableCard = ({
 			content={null}
 			style={{ opacity }}
 		>
-			{/* <pre>{current.description}</pre> */}
+			{current.description && <pre>{current.description}</pre>}
 		</Card>
 	);
 };
 
 interface FeaturesManagerProps {
 	kitFeatures: KitFeature[];
-	updateSectionKitOptions: (values: any) => void;
+	updateKitFeatures: (values: any) => void;
 }
 
 const FeatureManager = ({
 	kitFeatures = [],
-	updateSectionKitOptions,
+	updateKitFeatures,
 }: FeaturesManagerProps) => {
 	const [visibleGroup, setVisibleGroup] = useState<KitFeature[]>([]);
 	const [collapsedGroup, setCollapsedGroup] = useState<KitFeature[]>([]);
@@ -154,7 +154,7 @@ const FeatureManager = ({
 	}, [kitFeatures]);
 
 	const handleResetKitFeatures = () => {
-		updateSectionKitOptions({
+		updateKitFeatures({
 			kitFeatures: [
 				...map(visibleGroup, (item) => ({ ...item, isCollapsed: false })),
 				...map(collapsedGroup, (item) => ({ ...item, isCollapsed: true })),

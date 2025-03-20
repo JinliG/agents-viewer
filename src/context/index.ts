@@ -1,5 +1,5 @@
 import React from 'react';
-import { IFeature } from './FeaturesContextProvider';
+import { IAgent } from './AgentsContextProvider';
 import { IUserInfo } from './AuthContextProvider';
 import { isChromeExtension } from '~/utils';
 
@@ -32,17 +32,19 @@ export const authInitState: AuthContextProps = {
 
 export const AuthContext = React.createContext<AuthContextProps>(authInitState);
 
-export interface FeaturesContextProps {
-	features: IFeature[];
-	currentFeature: IFeature | null;
+export interface AgentsContextProps {
+	agents: IAgent[];
+	current: IAgent | null;
 	loading: boolean;
-	setCurrentFeature: (feature: IFeature) => void;
+	setCurrent: (iAgent: IAgent) => void;
+	setAgents: React.Dispatch<React.SetStateAction<IAgent[]>>;
 }
-export const featuresInitState: FeaturesContextProps = {
+export const agentsInitState: AgentsContextProps = {
 	loading: false,
-	features: [],
-	currentFeature: null,
-	setCurrentFeature: () => {},
+	agents: [],
+	current: null,
+	setCurrent: () => {},
+	setAgents: () => {},
 };
-export const FeaturesContext =
-	React.createContext<FeaturesContextProps>(featuresInitState);
+export const AgentsContext =
+	React.createContext<AgentsContextProps>(agentsInitState);

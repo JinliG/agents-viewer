@@ -5,17 +5,27 @@ import { map } from 'lodash';
 import React from 'react';
 
 import { useAuthContext } from '~/context/AuthContextProvider';
-import FeaturesContextProvider, {
-	useFeaturesContext,
-} from '~/context/FeaturesContextProvider';
+import AgentsContextProvider, {
+	useAgentsContext,
+} from '~/context/AgentsContextProvider';
 
 import styles from './Layout.module.less';
 
 const Layout: React.FC<any> = () => {
-	const { features, setCurrentFeature, currentFeature } = useFeaturesContext();
-	const { userInfo } = useAuthContext();
+	const {
+		agents,
+		setCurrent: setCurrentAgent,
+		current: currentAgent,
+	} = useAgentsContext();
+	const { userInfo, isChromeExtension } = useAuthContext();
 
-	const { Comp, name, botId } = currentFeature || {};
+	const { Comp, name, botId } = currentAgent || {};
+
+	const onOpenOptions = () => {
+		if (isChromeExtension) {
+			chrome.runtime.openOptionsPage();
+		}
+	};
 
 	return (
 		<div className={styles.layout}>
@@ -24,30 +34,38 @@ const Layout: React.FC<any> = () => {
 				<div className={styles.comp}>{Comp && <Comp botId={botId} />}</div>
 			</div>
 			<div className={styles.sider}>
-				<div className={styles.features}>
-					{map(features, (feature, index) => {
-						const { icon, name } = feature;
-						const isCurrent = currentFeature?.key === feature.key;
+				<div className={styles.agentList}>
+					{map(agents, (agent, index) => {
+						const { icon, name, active } = agent;
+						const isCurrent = currentAgent?.key === agent.key;
+
+						if (active === false) {
+							return null;
+						}
+
 						return (
-							<Tooltip trigger={'hover'} title={name}>
+							<Tooltip trigger={'hover'} placement='left' title={name}>
 								<div
 									key={index}
 									className={classNames(
 										styles.block,
 										isCurrent && styles.active
 									)}
-									onClick={() => setCurrentFeature(feature)}
+									onClick={() => setCurrentAgent(agent)}
 								>
 									<Image preview={false} src={icon} className={styles.icon} />
 								</div>
 							</Tooltip>
 						);
 					})}
-					<PlusCircleOutlined style={{ fontSize: 24 }} />
+					<PlusCircleOutlined
+						style={{ fontSize: 24 }}
+						onClick={onOpenOptions}
+					/>
 				</div>
 				<div className={styles.setting}>
-					<SettingOutlined style={{ fontSize: 24 }} />
-					<Avatar size={28} src={userInfo?.avatar} />
+					<SettingOutlined style={{ fontSize: 24 }} onClick={onOpenOptions} />
+					<Avatar size={28} src={userInfo?.avatar} onClick={onOpenOptions} />
 				</div>
 			</div>
 		</div>
@@ -55,7 +73,7 @@ const Layout: React.FC<any> = () => {
 };
 
 export default (props) => (
-	<FeaturesContextProvider>
+	<AgentsContextProvider>
 		<Layout {...props} />
-	</FeaturesContextProvider>
+	</AgentsContextProvider>
 );
