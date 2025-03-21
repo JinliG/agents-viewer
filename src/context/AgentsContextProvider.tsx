@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { getBotList } from '~/network/coze';
 import ChatPanel from '~/pages/ChatPanel';
 import { AgentsContext } from '.';
+import { ChatV3Message } from '@coze/api';
 
 export interface IAgent {
 	key: string;
@@ -12,6 +13,7 @@ export interface IAgent {
 	botId?: string;
 	botAvatar?: string;
 	active?: boolean;
+	messages?: ChatV3Message[];
 	Comp: (props?: any) => React.JSX.Element;
 }
 
@@ -48,12 +50,24 @@ const AgentsContextProvider: React.FC<any> = ({ children }) => {
 			});
 	}, []);
 
+	const updateAgentMessages = (botId: string, messages: ChatV3Message[]) => {
+		setAgents((prev) => {
+			const newAgents = [...prev];
+			const agentIndex = newAgents.findIndex((item) => item.botId === botId);
+			if (agentIndex !== -1) {
+				newAgents[agentIndex].messages = messages;
+			}
+			return newAgents;
+		});
+	};
+
 	const values = {
 		loading,
 		agents,
 		current,
 		setCurrent,
 		setAgents,
+		updateAgentMessages,
 	};
 
 	return (

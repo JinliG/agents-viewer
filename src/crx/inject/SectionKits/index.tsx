@@ -7,8 +7,7 @@ import {
 } from '@ant-design/icons';
 import { Tooltip } from 'antd';
 import { debounce, map } from 'lodash';
-import { singleStreamChat } from '~/network/coze';
-import { filterChatMessages, useStreamHandler } from '~/hooks/useStreamHandler';
+import { useStreamHandler } from '~/hooks/useStreamHandler';
 import KitPanel from './components/KitPanel';
 import { DefaultSectionKitMap, KitFeature } from '~/crx/types';
 
@@ -70,9 +69,8 @@ const SectionKits: React.FC<SectionKitsProps> = ({ kitFeatures = [] }) => {
 	const [selectionInfo, setSelectionInfo] = useState<SelectionInfo>();
 	const [showKitPanel, setShowKitPanel] = useState(false);
 	const [currentFeature, setCurrentFeature] = useState<SectionFeature>();
-	const [loading, setLoading] = useState(false);
 
-	const { handleStream, processing, chatMessages } = useStreamHandler();
+	const { streamChat, processing, chatMessages } = useStreamHandler();
 
 	const handleRemoveSectionKit = () => {
 		setSelectionInfo(null);
@@ -125,19 +123,11 @@ const SectionKits: React.FC<SectionKitsProps> = ({ kitFeatures = [] }) => {
 
 	const { selectionRect, selectionText, selectionContext } = selectionInfo;
 	const { top, left, height } = selectionRect;
-	const results = filterChatMessages(chatMessages, ['answer']);
+	// const results = filterChatMessages(chatMessages, ['answer']);
 
 	const defaultAction = (prompt: string) => {
 		if (!processing) {
-			setLoading(true);
-			singleStreamChat(prompt)
-				.then((response) => {
-					setLoading(false);
-					handleStream(response.body);
-				})
-				.catch(() => {
-					setLoading(false);
-				});
+			streamChat(prompt);
 		}
 	};
 
@@ -200,6 +190,8 @@ const SectionKits: React.FC<SectionKitsProps> = ({ kitFeatures = [] }) => {
 
 	const { CustomPanel } = currentFeature || {};
 
+	console.log('--- chatMessages', chatMessages);
+
 	return (
 		<StyledDiv onMouseUp={(e) => e.stopPropagation()}>
 			{!currentFeature && (
@@ -238,16 +230,16 @@ const SectionKits: React.FC<SectionKitsProps> = ({ kitFeatures = [] }) => {
 				>
 					{CustomPanel ? (
 						<CustomPanel
-							loading={loading}
-							results={results}
+							processing={processing}
+							results={chatMessages}
 							selectionText={selectionText}
 							feature={currentFeature}
 							onClose={handleCloseKitPanel}
 						/>
 					) : (
 						<KitPanel
-							loading={loading}
-							results={results}
+							processing={processing}
+							results={chatMessages}
 							selectionText={selectionText}
 							feature={currentFeature}
 							onClose={handleCloseKitPanel}

@@ -1,72 +1,111 @@
-import { useUnmount } from 'ahooks';
-import { filter } from 'lodash';
-import { useEffect, useState } from 'react';
-import { ChatMessage, MessageType } from '~/types/coze';
-import { parseMultiJson } from '~/utils';
+import { useMount, useUnmount } from 'ahooks';
+import { useMemo, useState } from 'react';
+import { client } from '~/network/coze';
+import {
+	ChatEventType,
+	ChatV3Message,
+	Conversation,
+	StreamChatReq,
+} from '@coze/api';
+import { convertInputToEnterMessage } from '~/utils';
+import { useAgentsContext } from '~/context/AgentsContextProvider';
+import { useAuthContext } from '~/context/AuthContextProvider';
 
-interface StreamHandlerResult<T> {
+interface StreamHandlerResult {
+	input: string;
 	processing: boolean;
-	bufferMessages: ChatMessage[];
-	chatMessages: ChatMessage[];
+	chatMessages: ChatV3Message[];
 	error?: Error;
-	handleStream: (stream: ReadableStream) => void;
+	streamChat: (
+		input: string,
+		fileList?: any[],
+		options?: StreamChatReq
+	) => void;
+	stopStream: () => void;
+	setChatMessages: React.Dispatch<React.SetStateAction<ChatV3Message[]>>;
+	clearChatMessages: () => void;
+	setInput: React.Dispatch<React.SetStateAction<string>>;
 }
 
-export function useStreamHandler<T>(): StreamHandlerResult<T> {
+interface IProps {
+	botId?: string;
+}
+export function useStreamHandler({ botId }: IProps = {}): StreamHandlerResult {
+	const { updateAgentMessages } = useAgentsContext();
+	const { userInfo } = useAuthContext();
+
+	const [conversation, setConversation] = useState<Conversation>();
 	const [processing, setProcessing] = useState(false);
-	const [bufferMessages, setBufferMessages] = useState<ChatMessage[]>([]);
-	const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+	const [chatMessages, setChatMessages] = useState<ChatV3Message[]>([]);
+	const [input, setInput] = useState<string>();
 	const [error, setError] = useState<Error>();
 
+	const clearChatMessages = () => {
+		stopStream();
+		updateAgentMessages(botId, []);
+	};
+
+	const stopStream = () => {
+		// TODO: stop stream
+		setProcessing(false);
+	};
+
+	useMount(async () => {
+		const newConversation = await client.conversations.create({
+			bot_id: botId || import.meta.env.VITE_COZE_GLOBAL_BOT,
+		});
+		setConversation(newConversation);
+	});
+
 	// 流处理逻辑
-	const handleStream = (stream: ReadableStream) => {
+	const streamChat = async (
+		input: string,
+		fileList?: any[],
+		options?: StreamChatReq
+	) => {
 		setProcessing(true);
 		setChatMessages([]);
 
-		const reader = stream?.getReader();
-		const push = () =>
-			reader
-				?.read()
-				.then(({ done, value }) => {
-					if (done === true) {
-						setProcessing(false);
-						console.log('stream done', chatMessages);
-						return;
-					}
-					const chunk = new TextDecoder().decode(value);
-					const list = parseMultiJson(chunk);
+		try {
+			const stream = await client.chat.stream({
+				conversation_id: conversation?.id,
+				bot_id: botId || import.meta.env.VITE_COZE_GLOBAL_BOT,
+				user_id: userInfo?.id,
+				additional_messages: convertInputToEnterMessage(input, fileList),
+				auto_save_history: true,
+				...options,
+			});
 
-					setBufferMessages((prev) => [...prev, ...list]);
-					setChatMessages((prev) => [...prev, ...list]);
-					push();
-				})
-				.catch((e) => {
-					setError(e as Error);
-					setProcessing(false);
-				});
-
-		push();
+			for await (const part of stream) {
+				if (part.event === ChatEventType.CONVERSATION_MESSAGE_DELTA) {
+					setChatMessages((prev) => [...prev, part.data]);
+				}
+			}
+		} catch (e) {
+			setError(e);
+		} finally {
+			setProcessing(false);
+		}
 	};
 
 	// 卸载时清理状态
 	useUnmount(() => {
-		setBufferMessages([]);
 		setChatMessages([]);
 	});
 
-	return {
-		processing,
-		chatMessages,
-		bufferMessages,
-		error,
-		handleStream,
-	};
-}
-
-export function filterChatMessages(
-	events: ChatMessage[],
-	types: MessageType[]
-) {
-	// v3 chat 末尾会追加为完整的消息，这里移除
-	return filter(events, (item) => types.includes(item.type)).slice(0, -1);
+	return useMemo(
+		() => ({
+			conversation,
+			input,
+			chatMessages,
+			processing,
+			error,
+			streamChat,
+			stopStream,
+			setChatMessages,
+			clearChatMessages,
+			setInput,
+		}),
+		[input, chatMessages, processing, error, conversation]
+	);
 }

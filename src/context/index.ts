@@ -2,6 +2,7 @@ import React from 'react';
 import { IAgent } from './AgentsContextProvider';
 import { IUserInfo } from './AuthContextProvider';
 import { isChromeExtension } from '~/utils';
+import { ChatV3Message } from '@coze/api';
 
 /**
  * because of vite issue(https://github.com/vitejs/vite/issues/3301)
@@ -38,6 +39,7 @@ export interface AgentsContextProps {
 	loading: boolean;
 	setCurrent: (iAgent: IAgent) => void;
 	setAgents: React.Dispatch<React.SetStateAction<IAgent[]>>;
+	updateAgentMessages: (botId: string, messages: ChatV3Message[]) => void;
 }
 export const agentsInitState: AgentsContextProps = {
 	loading: false,
@@ -45,6 +47,7 @@ export const agentsInitState: AgentsContextProps = {
 	current: null,
 	setCurrent: () => {},
 	setAgents: () => {},
+	updateAgentMessages: () => {},
 };
 export const AgentsContext =
 	React.createContext<AgentsContextProps>(agentsInitState);

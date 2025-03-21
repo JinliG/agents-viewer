@@ -4,13 +4,13 @@ import { useMemo, useState } from 'react';
 
 import { useAuthContext } from '~/context/AuthContextProvider';
 import { useAgentsContext } from '~/context/AgentsContextProvider';
-import { BotMessage, BotMessageRole } from '~/types';
 import Markdown from 'react-markdown';
 
 import styles from './index.module.less';
 import remarkGfm from 'remark-gfm';
 import LoadingDots from '~/components/LoadingDots';
 import { FileCard } from '../..';
+import { ChatV3Message, RoleType } from '@coze/api';
 
 /**
  * 支持的格式
@@ -20,8 +20,8 @@ import { FileCard } from '../..';
 
 interface BubbleProps {
 	id: string;
-	role: BotMessageRole;
-	messages: BotMessage[];
+	role: RoleType;
+	messages: ChatV3Message[];
 }
 interface ChatMessageBubbleProps {
 	bubble?: BubbleProps;
@@ -34,9 +34,9 @@ function BubbleHeader(bubble: BubbleProps) {
 
 	const avatar = useMemo(() => {
 		switch (role) {
-			case BotMessageRole.Assistant:
+			case RoleType.Assistant:
 				return <Avatar src={botAvatar} style={{ width: 24, height: 24 }} />;
-			case BotMessageRole.User:
+			case RoleType.User:
 				return <Avatar size={24} src={userInfo?.avatar} />;
 			default:
 				return null;
@@ -85,10 +85,10 @@ function ChatMessageBubble(props: ChatMessageBubbleProps) {
 
 	let multiModalMessages = [];
 
-	if (role === BotMessageRole.User) {
+	if (role === RoleType.User) {
 		const { true: multiModalMsgs, false: textMsgs } = groupBy(
 			messages,
-			(item) => !isEmpty(item.multiModal)
+			(item) => item.content_type === 'object_string'
 		);
 
 		messages = textMsgs;
@@ -125,12 +125,12 @@ function ChatMessageBubble(props: ChatMessageBubbleProps) {
 }
 
 interface ChatMessageProps {
-	streamMessages: BotMessage[];
+	chatMessages: ChatV3Message[];
 	isWaitingAnswer: boolean;
 }
 
 export default function ChatMessages(props: ChatMessageProps) {
-	const { streamMessages, isWaitingAnswer } = props;
+	const { chatMessages: streamMessages, isWaitingAnswer } = props;
 
 	const bubbleList = useMemo<Array<BubbleProps>>(() => {
 		const list: Array<BubbleProps> = [];
@@ -149,7 +149,7 @@ export default function ChatMessages(props: ChatMessageProps) {
 					 * 由于 coze /v3/chat 在最后一个 event 中追加了一个包含完整响应内容的消息
 					 * 所以这里必须手动移除
 					 */
-					if (currentBubble.role === BotMessageRole.Assistant) {
+					if (currentBubble.role === RoleType.Assistant) {
 						currentBubble.messages.pop();
 					}
 					list.push(currentBubble);
@@ -166,7 +166,7 @@ export default function ChatMessages(props: ChatMessageProps) {
 
 			// 响应的最后一个消息
 			if (index === streamMessages.length - 1) {
-				if (currentBubble.role === BotMessageRole.Assistant) {
+				if (currentBubble.role === RoleType.Assistant) {
 					currentBubble.messages.pop();
 				}
 

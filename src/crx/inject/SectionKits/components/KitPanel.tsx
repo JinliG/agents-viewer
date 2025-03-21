@@ -6,12 +6,12 @@ import {
 	WechatWorkOutlined,
 	InfoCircleOutlined,
 } from '@ant-design/icons';
-import { ChatMessage } from '~/types/coze';
 import { map } from 'lodash';
 import LoadingDots from '~/components/LoadingDots';
 import { Button } from 'antd';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { ChatV3Message } from '@coze/api';
 
 const StyledDiv = styled.div`
 	min-width: 360px;
@@ -63,10 +63,10 @@ const StyledDiv = styled.div`
 
 interface KitPanelProps {
 	[key: string]: any;
-	loading: boolean;
+	processing: boolean;
 	selectionText: string;
 	feature: SectionFeature;
-	results: ChatMessage[];
+	results: ChatV3Message[];
 	onClose: () => void;
 }
 
@@ -75,7 +75,7 @@ const KitPanel: React.FC<KitPanelProps> = ({
 	onClose,
 	selectionText,
 	results,
-	loading,
+	processing,
 }) => {
 	const { label } = feature;
 
@@ -93,7 +93,7 @@ const KitPanel: React.FC<KitPanelProps> = ({
 			<div className='content'>
 				<p className='selection-text'>{selectionText}</p>
 				<div className='result-text'>
-					{loading ? (
+					{processing ? (
 						<LoadingDots />
 					) : (
 						<Markdown remarkPlugins={[remarkGfm]}>{resultText}</Markdown>

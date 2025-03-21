@@ -9,10 +9,42 @@ import type {
 	SimpleBot,
 } from '~/types/coze';
 import { convertInputToEnterMessage } from '~/utils';
+import {
+	CozeAPI,
+	ChatEventType,
+	RoleType,
+	ChatStatus,
+	StreamChatReq,
+} from '@coze/api';
 
 export const cozeBase = 'https://api.coze.cn';
 export const cozeHost = 'api.coze.cn';
 export const cozeApiChat = '/v3/chat';
+
+export const client = new CozeAPI({
+	token: import.meta.env.VITE_COZE_API_KEY,
+	baseURL: cozeBase,
+	allowPersonalAccessTokenInBrowser: true,
+});
+
+// export async function streamChat() {
+// 	const stream = await client.chat.stream({
+// 		bot_id: 'your_bot_id',
+// 		additional_messages: [
+// 			{
+// 				role: RoleType.User,
+// 				content: 'Hello!',
+// 				content_type: 'text',
+// 			},
+// 		],
+// 	});
+
+// 	for await (const part of stream) {
+// 		if (part.event === ChatEventType.CONVERSATION_MESSAGE_DELTA) {
+// 			process.stdout.write(part.data.content); // Real-time response
+// 		}
+// 	}
+// }
 
 export const fetchHandler = async (
 	path: string,
@@ -106,3 +138,22 @@ export const singleStreamChat = (
 		body: JSON.stringify(body),
 	});
 };
+
+export async function streamChat(
+	input: string,
+	fileList?: FileInfo[],
+	options?: StreamChatReq
+) {
+	const stream = await client.chat.stream({
+		bot_id: import.meta.env.VITE_COZE_GLOBAL_BOT,
+		user_id: 'Jinli',
+		additional_messages: convertInputToEnterMessage(input, fileList),
+		auto_save_history: true,
+		...options,
+	});
+	for await (const part of stream) {
+		if (part.event === ChatEventType.CONVERSATION_MESSAGE_DELTA) {
+			return part.data;
+		}
+	}
+}

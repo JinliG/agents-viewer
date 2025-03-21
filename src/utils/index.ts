@@ -1,22 +1,18 @@
+import { EnterMessage, ObjectStringItem, RoleType } from '@coze/api';
 import { isEmpty, map } from 'lodash';
-import type {
-	ChatMessage,
-	EnterMessage,
-	FileInfo,
-	ObjectStringItem,
-} from '~/types/coze';
+import type { ChatMessage } from '~/types/coze';
 
 // 将用户输入转换为多模态 EnterMessage
 export function convertInputToEnterMessage(
 	message: string,
-	fileList?: FileInfo[]
+	fileList?: any[]
 ): EnterMessage[] {
 	// 纯文本消息
 	if (isEmpty(fileList)) {
 		return [
 			{
 				content: message,
-				role: 'user',
+				role: RoleType.User,
 				content_type: 'text',
 			},
 		];
@@ -38,7 +34,7 @@ export function convertInputToEnterMessage(
 		{
 			content_type: 'object_string',
 			content: JSON.stringify(contents),
-			role: 'user',
+			role: RoleType.User,
 		},
 	];
 }
@@ -72,6 +68,8 @@ export function parseMultiJson(jsonStr: string): ChatMessage[] {
 	let startIndex = 0;
 	let endIndex = 0;
 
+	console.log('--- jsonStr', jsonStr);
+
 	while (startIndex < jsonStr.length) {
 		// 找到一个 JSON 对象的开始位置
 		startIndex = jsonStr.indexOf('{', startIndex);
@@ -93,6 +91,7 @@ export function parseMultiJson(jsonStr: string): ChatMessage[] {
 
 		// 将该 JSON 对象解析为一个对象，并添加到数组中
 		const json = jsonStr.substring(startIndex, endIndex);
+		console.log('--- json', json);
 		jsonArr.push(JSON.parse(json));
 
 		// 更新下一个 JSON 对象的开始位置

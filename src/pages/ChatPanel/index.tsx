@@ -8,15 +8,11 @@ import { useChat } from 'ai/react';
 import { Button, Form } from 'antd';
 import TextArea from 'antd/es/input/TextArea';
 import { groupBy, isEmpty, map, uniqueId } from 'lodash';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 
-import { cozeApiChat, cozeBase, cozeHost } from '~/network/coze';
-import type { ChatMessage, ChatReq, FileInfo, MessageType } from '~/types/coze';
-import {
-	convertInputToEnterMessage,
-	formatBytes,
-	parseMultiJson,
-} from '~/utils';
+import { cozeApiChat, cozeBase } from '~/network/coze';
+import type { ChatMessage, FileInfo, MessageType } from '~/types/coze';
+import { formatBytes, parseMultiJson } from '~/utils';
 
 import ChatMessages from './components/ChatMessages';
 import styles from './index.module.less';
@@ -24,6 +20,8 @@ import Uploader from './components/Uploader';
 import { BotMessage, BotMessageRole } from '~/types';
 import classNames from 'classnames';
 import { useAuthContext } from '~/context/AuthContextProvider';
+import { useAgentsContext } from '~/context/AgentsContextProvider';
+import { useStreamHandler } from '~/hooks/useStreamHandler';
 
 function getContentId(str: string) {
 	return encodeURIComponent(str).replace(/[.*+?^${}()|[\]\\]/g, '-');
@@ -56,120 +54,134 @@ export const FileCard: React.FC<FileCardProps> = ({
 	);
 };
 
+let lastBotId;
 interface ChatPanelProps {
 	botId: string;
 }
 export default function ChatPanel(props: ChatPanelProps) {
 	const { botId } = props;
-	const [isWaitingAnswer, setIsWaitingAnswer] = useState(false);
-	const [fileList, setFileList] = useState<FileInfo[]>([]);
-	const { userInfo } = useAuthContext();
-
+	const { updateAgentMessages, current } = useAgentsContext();
 	const {
-		messages: streamMessages,
-		setMessages: setStreamMessages,
-		handleSubmit,
+		streamChat,
+		processing,
+		chatMessages,
 		input,
-		handleInputChange,
-		stop: stopStream,
-	} = useChat({
-		streamMode: 'text',
-		api: cozeBase + cozeApiChat,
-		// 使用 useChat 的钩子并自定义处理可读流逻辑
-		onResponse: (response) => {
-			setIsWaitingAnswer(true);
+		setInput,
+		setChatMessages,
+		stopStream,
+	} = useStreamHandler({ botId });
 
-			const inputMessageId = getContentId(input + uniqueId());
-			// 多模态消息
-			const payloadMessages: BotMessage[] = map(fileList, (item) => {
-				return {
-					id: inputMessageId,
-					role: BotMessageRole.User,
-					content: '',
-					multiModal: item,
-				};
-			});
-			let bufferMessages: BotMessage[] = [
-				// 合并之前的 streamMessages
-				...(streamMessages as BotMessage[]),
-				...payloadMessages,
-				// 添加当前输入内容
-				{
-					id: inputMessageId,
-					role: BotMessageRole.User,
-					content: input,
-				},
-			];
-			setFileList([]);
+	const [fileList, setFileList] = useState<FileInfo[]>([]);
 
-			const reader = response.body?.getReader();
-			const push = () =>
-				reader
-					?.read()
-					.then(({ done, value }) => {
-						if (done === true) {
-							setIsWaitingAnswer(false);
-							console.log('stream done', bufferMessages);
-							return;
-						}
-						const chunk = new TextDecoder().decode(value);
-						const list = parseMultiJson(chunk);
-						const groupedByType = groupBy(list, (item) => item?.type);
-						const { answer = [] } = groupedByType as {
-							[key in MessageType]: ChatMessage[];
-						};
+	useEffect(() => {
+		if (lastBotId) {
+			updateAgentMessages(lastBotId, chatMessages);
+		}
+		setChatMessages(current.messages || []);
+		lastBotId = botId;
+	}, [botId]);
 
-						bufferMessages = bufferMessages.concat(
-							answer.map(({ content, id, role }) => ({
-								id,
-								role: role as BotMessageRole,
-								content: content as string,
-							}))
-						);
+	// const {
+	// 	// messages: streamMessages,
+	// 	// setMessages: setStreamMessages,
+	// 	handleSubmit,
+	// 	// input,
+	// 	handleInputChange,
+	// 	stop: stopStream,
+	// } = useChat({
+	// 	streamMode: 'text',
+	// 	api: cozeBase + cozeApiChat,
+	// 	// 使用 useChat 的钩子并自定义处理可读流逻辑
+	// 	onResponse: (response) => {
+	// 		const inputMessageId = getContentId(input + uniqueId());
+	// 		// 多模态消息
+	// 		const payloadMessages: BotMessage[] = map(fileList, (item) => {
+	// 			return {
+	// 				id: inputMessageId,
+	// 				role: BotMessageRole.User,
+	// 				content: '',
+	// 				multiModal: item,
+	// 			};
+	// 		});
+	// 		let bufferMessages: BotMessage[] = [
+	// 			// 合并之前的 streamMessages
+	// 			...payloadMessages,
+	// 			// 添加当前输入内容
+	// 			{
+	// 				id: inputMessageId,
+	// 				role: BotMessageRole.User,
+	// 				content: input,
+	// 			},
+	// 		];
+	// 		setFileList([]);
 
-						setStreamMessages(bufferMessages);
-						push();
-					})
-					.catch((e) => {
-						console.error('reader error ', e);
-						setIsWaitingAnswer(false);
-					});
-			return push();
-		},
-		onError(error) {
-			console.error(error);
-		},
-	});
+	// 		const reader = response.body?.getReader();
+	// 		const push = () =>
+	// 			reader
+	// 				?.read()
+	// 				.then(({ done, value }) => {
+	// 					if (done === true) {
+	// 						console.log('stream done', bufferMessages);
+	// 						return;
+	// 					}
+	// 					const chunk = new TextDecoder().decode(value);
+	// 					const list = parseMultiJson(chunk);
+	// 					const groupedByType = groupBy(list, (item) => item?.type);
+	// 					const { answer = [] } = groupedByType as {
+	// 						[key in MessageType]: ChatMessage[];
+	// 					};
+
+	// 					bufferMessages = bufferMessages.concat(
+	// 						answer.map(({ content, id, role }) => ({
+	// 							id,
+	// 							role: role as BotMessageRole,
+	// 							content: content as string,
+	// 						}))
+	// 					);
+	// 					push();
+	// 				})
+	// 				.catch((e) => {
+	// 					console.error('reader error ', e);
+	// 				});
+	// 		return push();
+	// 	},
+	// 	onError(error) {
+	// 		console.error(error);
+	// 	},
+	// });
 
 	async function sendMessage(e: FormEvent<any>) {
 		e.preventDefault();
-		if (!streamMessages.length) {
+		if (!chatMessages.length) {
 			await new Promise((resolve) => setTimeout(resolve, 300));
 		}
-		if (isWaitingAnswer) {
+		if (processing) {
 			return;
 		}
 
-		handleSubmit(e, {
-			options: {
-				headers: {
-					host: cozeHost,
-					Authorization: `Bearer ${import.meta.env.VITE_COZE_API_KEY}`,
-				},
-				body: {
-					bot_id: botId,
-					user_id: userInfo.id,
-					additional_messages: convertInputToEnterMessage(input, fileList),
-					auto_save_history: true,
-					stream: true,
-				} as ChatReq,
-			},
-		});
+		streamChat(input, fileList);
+
+		// handleSubmit(e, {
+		// 	options: {
+		// 		headers: {
+		// 			host: cozeHost,
+		// 			Authorization: `Bearer ${import.meta.env.VITE_COZE_API_KEY}`,
+		// 		},
+		// 		body: {
+		// 			bot_id: botId,
+		// 			user_id: userInfo.id,
+		// 			additional_messages: convertInputToEnterMessage(input, fileList),
+		// 			auto_save_history: true,
+		// 			stream: true,
+		// 		} as ChatReq,
+		// 	},
+		// });
 	}
 
 	const clearMessages = () => {
 		stopStream();
-		setStreamMessages([]);
+		updateAgentMessages(botId, []);
+		setChatMessages([]);
 	};
 
 	const removeFile = (id: string) => {
@@ -180,8 +192,8 @@ export default function ChatPanel(props: ChatPanelProps) {
 		<div className={styles.chatPanel}>
 			<div className={styles.messageContainer}>
 				<ChatMessages
-					streamMessages={streamMessages as BotMessage[]}
-					isWaitingAnswer={isWaitingAnswer}
+					chatMessages={chatMessages}
+					isWaitingAnswer={processing}
 				/>
 			</div>
 			<div className={styles.inputContainer}>
@@ -197,7 +209,7 @@ export default function ChatPanel(props: ChatPanelProps) {
 					placeholder='输入消息...'
 					value={input}
 					autoSize={false}
-					onChange={handleInputChange}
+					onChange={(e) => setInput(e.target.value)}
 					rows={3}
 					onPressEnter={sendMessage}
 					style={{

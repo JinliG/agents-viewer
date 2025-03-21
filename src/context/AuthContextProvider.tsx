@@ -6,7 +6,7 @@ import { useMount } from 'ahooks';
 import { mockUser } from '~/constant';
 
 export interface IUserInfo {
-	id: number | string;
+	id: string;
 	email: string;
 	name: string;
 	roles?: string;
