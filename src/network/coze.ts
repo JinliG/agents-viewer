@@ -1,21 +1,12 @@
 import { createAxiosInstance } from '~/network/instance';
-import type {
-	ChatReq,
-	Conversation,
-	CozeAPIResponse,
-	EnterMessage,
-	FileInfo,
-	MetaDataType,
-	SimpleBot,
-} from '~/types/coze';
-import { convertInputToEnterMessage } from '~/utils';
 import {
 	CozeAPI,
-	ChatEventType,
-	RoleType,
-	ChatStatus,
-	StreamChatReq,
+	EnterMessage,
+	Conversation,
+	MetaDataType,
+	BotInfo,
 } from '@coze/api';
+import { FileInfo } from '~/types';
 
 export const cozeBase = 'https://api.coze.cn';
 export const cozeHost = 'api.coze.cn';
@@ -27,24 +18,12 @@ export const client = new CozeAPI({
 	allowPersonalAccessTokenInBrowser: true,
 });
 
-// export async function streamChat() {
-// 	const stream = await client.chat.stream({
-// 		bot_id: 'your_bot_id',
-// 		additional_messages: [
-// 			{
-// 				role: RoleType.User,
-// 				content: 'Hello!',
-// 				content_type: 'text',
-// 			},
-// 		],
-// 	});
-
-// 	for await (const part of stream) {
-// 		if (part.event === ChatEventType.CONVERSATION_MESSAGE_DELTA) {
-// 			process.stdout.write(part.data.content); // Real-time response
-// 		}
-// 	}
-// }
+export interface CozeAPIResponse<T> {
+	// 状态码 0 代表调用成功
+	code: 0 | number;
+	data: T;
+	msg: string;
+}
 
 export const fetchHandler = async (
 	path: string,
@@ -73,7 +52,7 @@ const { get, post } = createAxiosInstance(cozeBase, {
  * @returns
  */
 export const getBotList = () => {
-	return get<CozeAPIResponse<{ space_bots: SimpleBot[]; total: number }>>(
+	return get<CozeAPIResponse<{ space_bots: BotInfo[]; total: number }>>(
 		'/v1/space/published_bots_list',
 		{
 			space_id: import.meta.env.VITE_COZE_SPACE_ID,
@@ -111,49 +90,3 @@ export const uploadFile = (file: File) => {
 		},
 	});
 };
-
-/**
- * 单次对话调用
- * PS：axios 基于 xhr 封装，不支持 readable stream，所以这里使用 fetch
- * @param input
- * @param fileList
- * @param options
- * @returns
- */
-export const singleStreamChat = (
-	input: string,
-	fileList?: FileInfo[],
-	options?: ChatReq
-) => {
-	const body = {
-		bot_id: import.meta.env.VITE_COZE_GLOBAL_BOT,
-		user_id: 'Jinli',
-		additional_messages: convertInputToEnterMessage(input, fileList),
-		auto_save_history: true,
-		stream: true,
-		...options,
-	};
-	return fetchHandler(cozeApiChat, {
-		method: 'POST',
-		body: JSON.stringify(body),
-	});
-};
-
-export async function streamChat(
-	input: string,
-	fileList?: FileInfo[],
-	options?: StreamChatReq
-) {
-	const stream = await client.chat.stream({
-		bot_id: import.meta.env.VITE_COZE_GLOBAL_BOT,
-		user_id: 'Jinli',
-		additional_messages: convertInputToEnterMessage(input, fileList),
-		auto_save_history: true,
-		...options,
-	});
-	for await (const part of stream) {
-		if (part.event === ChatEventType.CONVERSATION_MESSAGE_DELTA) {
-			return part.data;
-		}
-	}
-}

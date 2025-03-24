@@ -4,28 +4,19 @@ import {
 	PlusOutlined,
 	CloseCircleFilled,
 } from '@ant-design/icons';
-import { useChat } from 'ai/react';
 import { Button, Form } from 'antd';
 import TextArea from 'antd/es/input/TextArea';
-import { groupBy, isEmpty, map, uniqueId } from 'lodash';
+import { isEmpty, map } from 'lodash';
 import { useEffect, useState, type FormEvent } from 'react';
-
-import { cozeApiChat, cozeBase } from '~/network/coze';
-import type { ChatMessage, FileInfo, MessageType } from '~/types/coze';
-import { formatBytes, parseMultiJson } from '~/utils';
 
 import ChatMessages from './components/ChatMessages';
 import styles from './index.module.less';
 import Uploader from './components/Uploader';
-import { BotMessage, BotMessageRole } from '~/types';
 import classNames from 'classnames';
-import { useAuthContext } from '~/context/AuthContextProvider';
 import { useAgentsContext } from '~/context/AgentsContextProvider';
 import { useStreamHandler } from '~/hooks/useStreamHandler';
-
-function getContentId(str: string) {
-	return encodeURIComponent(str).replace(/[.*+?^${}()|[\]\\]/g, '-');
-}
+import { FileInfo } from '~/types';
+import { formatBytes } from '~/utils';
 
 interface FileCardProps extends React.HTMLAttributes<HTMLDivElement> {
 	file: FileInfo;
@@ -64,125 +55,34 @@ export default function ChatPanel(props: ChatPanelProps) {
 	const {
 		streamChat,
 		processing,
-		chatMessages,
-		input,
-		setInput,
-		setChatMessages,
-		stopStream,
+		streamMessages,
+		setStreamMessages,
+		clearStreamMessages,
 	} = useStreamHandler({ botId });
 
 	const [fileList, setFileList] = useState<FileInfo[]>([]);
+	const [input, setInput] = useState('');
 
 	useEffect(() => {
 		if (lastBotId) {
-			updateAgentMessages(lastBotId, chatMessages);
+			updateAgentMessages(lastBotId, streamMessages);
 		}
-		setChatMessages(current.messages || []);
+		setStreamMessages(current.messages || []);
 		lastBotId = botId;
 	}, [botId]);
 
-	// const {
-	// 	// messages: streamMessages,
-	// 	// setMessages: setStreamMessages,
-	// 	handleSubmit,
-	// 	// input,
-	// 	handleInputChange,
-	// 	stop: stopStream,
-	// } = useChat({
-	// 	streamMode: 'text',
-	// 	api: cozeBase + cozeApiChat,
-	// 	// 使用 useChat 的钩子并自定义处理可读流逻辑
-	// 	onResponse: (response) => {
-	// 		const inputMessageId = getContentId(input + uniqueId());
-	// 		// 多模态消息
-	// 		const payloadMessages: BotMessage[] = map(fileList, (item) => {
-	// 			return {
-	// 				id: inputMessageId,
-	// 				role: BotMessageRole.User,
-	// 				content: '',
-	// 				multiModal: item,
-	// 			};
-	// 		});
-	// 		let bufferMessages: BotMessage[] = [
-	// 			// 合并之前的 streamMessages
-	// 			...payloadMessages,
-	// 			// 添加当前输入内容
-	// 			{
-	// 				id: inputMessageId,
-	// 				role: BotMessageRole.User,
-	// 				content: input,
-	// 			},
-	// 		];
-	// 		setFileList([]);
-
-	// 		const reader = response.body?.getReader();
-	// 		const push = () =>
-	// 			reader
-	// 				?.read()
-	// 				.then(({ done, value }) => {
-	// 					if (done === true) {
-	// 						console.log('stream done', bufferMessages);
-	// 						return;
-	// 					}
-	// 					const chunk = new TextDecoder().decode(value);
-	// 					const list = parseMultiJson(chunk);
-	// 					const groupedByType = groupBy(list, (item) => item?.type);
-	// 					const { answer = [] } = groupedByType as {
-	// 						[key in MessageType]: ChatMessage[];
-	// 					};
-
-	// 					bufferMessages = bufferMessages.concat(
-	// 						answer.map(({ content, id, role }) => ({
-	// 							id,
-	// 							role: role as BotMessageRole,
-	// 							content: content as string,
-	// 						}))
-	// 					);
-	// 					push();
-	// 				})
-	// 				.catch((e) => {
-	// 					console.error('reader error ', e);
-	// 				});
-	// 		return push();
-	// 	},
-	// 	onError(error) {
-	// 		console.error(error);
-	// 	},
-	// });
-
 	async function sendMessage(e: FormEvent<any>) {
 		e.preventDefault();
-		if (!chatMessages.length) {
+		if (!streamMessages.length) {
 			await new Promise((resolve) => setTimeout(resolve, 300));
 		}
 		if (processing) {
 			return;
 		}
 
-		streamChat(input, fileList);
-
-		// handleSubmit(e, {
-		// 	options: {
-		// 		headers: {
-		// 			host: cozeHost,
-		// 			Authorization: `Bearer ${import.meta.env.VITE_COZE_API_KEY}`,
-		// 		},
-		// 		body: {
-		// 			bot_id: botId,
-		// 			user_id: userInfo.id,
-		// 			additional_messages: convertInputToEnterMessage(input, fileList),
-		// 			auto_save_history: true,
-		// 			stream: true,
-		// 		} as ChatReq,
-		// 	},
-		// });
+		setInput('');
+		await streamChat(input, fileList);
 	}
-
-	const clearMessages = () => {
-		stopStream();
-		updateAgentMessages(botId, []);
-		setChatMessages([]);
-	};
 
 	const removeFile = (id: string) => {
 		setFileList((state) => state.filter((item) => item.id !== id));
@@ -192,7 +92,7 @@ export default function ChatPanel(props: ChatPanelProps) {
 		<div className={styles.chatPanel}>
 			<div className={styles.messageContainer}>
 				<ChatMessages
-					chatMessages={chatMessages}
+					streamMessages={streamMessages}
 					isWaitingAnswer={processing}
 				/>
 			</div>
@@ -219,7 +119,7 @@ export default function ChatPanel(props: ChatPanelProps) {
 				<div className={styles.innerTools}>
 					<Button
 						type='text'
-						onClick={clearMessages}
+						onClick={clearStreamMessages}
 						icon={<ClearOutlined />}
 					/>
 					<div className={styles.right}>

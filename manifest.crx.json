@@ -47,5 +47,8 @@
 	],
 	"host_permissions": [
 		"https://*/*"
-	]
+	],
+	"content_security_policy": {
+		"extension_pages": "script-src 'self'; object-src 'self'; media-src 'self' https://lf-bot-studio-plugin-resource.coze.cn;"
+	}
 }

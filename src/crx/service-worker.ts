@@ -90,9 +90,10 @@ chrome.runtime.onMessage.addListener(
 	(request: CrxMessageRequest, sender, sendResponse) => {
 		console.log('--- sw receive message', request, sender.tab);
 		const { type, payload = {} } = request;
+		const { keys } = payload;
+
 		switch (type) {
 			case CrxMessageTypesMap.GET_GLOBAL_OPTIONS:
-				const { keys } = payload;
 				getGlobalOptions(keys).then((result) => {
 					sendResponse(result);
 				});

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { ReactNode, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import {
 	BookOutlined,
@@ -7,7 +7,7 @@ import {
 } from '@ant-design/icons';
 import { Tooltip } from 'antd';
 import { debounce, map } from 'lodash';
-import { useStreamHandler } from '~/hooks/useStreamHandler';
+import { StreamMessage, useStreamHandler } from '~/hooks/useStreamHandler';
 import KitPanel from './components/KitPanel';
 import { DefaultSectionKitMap, KitFeature } from '~/crx/types';
 
@@ -15,7 +15,7 @@ interface ExtraFeatureProps {
 	prompt: string;
 	icon: React.ReactNode;
 	action: (...arg) => void;
-	CustomPanel?: React.FC<any>;
+	customRender?: (answer: string, messages: StreamMessage[]) => ReactNode;
 }
 export interface SectionFeature extends KitFeature, ExtraFeatureProps {}
 
@@ -70,7 +70,7 @@ const SectionKits: React.FC<SectionKitsProps> = ({ kitFeatures = [] }) => {
 	const [showKitPanel, setShowKitPanel] = useState(false);
 	const [currentFeature, setCurrentFeature] = useState<SectionFeature>();
 
-	const { streamChat, processing, chatMessages } = useStreamHandler();
+	const { singleStreamChat, processing, streamMessages } = useStreamHandler();
 
 	const handleRemoveSectionKit = () => {
 		setSelectionInfo(null);
@@ -123,11 +123,10 @@ const SectionKits: React.FC<SectionKitsProps> = ({ kitFeatures = [] }) => {
 
 	const { selectionRect, selectionText, selectionContext } = selectionInfo;
 	const { top, left, height } = selectionRect;
-	// const results = filterChatMessages(chatMessages, ['answer']);
 
 	const defaultAction = (prompt: string) => {
 		if (!processing) {
-			streamChat(prompt);
+			singleStreamChat(prompt);
 		}
 	};
 
@@ -158,6 +157,29 @@ const SectionKits: React.FC<SectionKitsProps> = ({ kitFeatures = [] }) => {
 			icon: <SoundOutlined className='icon' />,
 			action: defaultAction,
 			prompt: `朗读以下内容："${selectionText}"。直接返回语音链接不要其他文本。`,
+			customRender: (answer) => {
+				return (
+					<>
+						<a
+							href={answer}
+							target='_blank'
+							style={{
+								display: 'inline-block',
+								width: '360px',
+								overflowX: 'hidden',
+								whiteSpace: 'nowrap',
+								textOverflow: 'ellipsis',
+							}}
+						>
+							{answer}
+						</a>
+						<audio controls>
+							<source src={answer} type='audio/mp3' />
+							Your browser does not support the audio element.
+						</audio>
+					</>
+				);
+			},
 		},
 	};
 
@@ -187,10 +209,6 @@ const SectionKits: React.FC<SectionKitsProps> = ({ kitFeatures = [] }) => {
 	const handleCloseKitPanel = () => {
 		setShowKitPanel(false);
 	};
-
-	const { CustomPanel } = currentFeature || {};
-
-	console.log('--- chatMessages', chatMessages);
 
 	return (
 		<StyledDiv onMouseUp={(e) => e.stopPropagation()}>
@@ -228,23 +246,13 @@ const SectionKits: React.FC<SectionKitsProps> = ({ kitFeatures = [] }) => {
 					className='kit-panel-wrapper'
 					style={{ top: top + window.scrollY + height + 20, left }}
 				>
-					{CustomPanel ? (
-						<CustomPanel
-							processing={processing}
-							results={chatMessages}
-							selectionText={selectionText}
-							feature={currentFeature}
-							onClose={handleCloseKitPanel}
-						/>
-					) : (
-						<KitPanel
-							processing={processing}
-							results={chatMessages}
-							selectionText={selectionText}
-							feature={currentFeature}
-							onClose={handleCloseKitPanel}
-						/>
-					)}
+					<KitPanel
+						processing={processing}
+						streamMessages={streamMessages}
+						selectionText={selectionText}
+						feature={currentFeature}
+						onClose={handleCloseKitPanel}
+					/>
 				</div>
 			)}
 		</StyledDiv>

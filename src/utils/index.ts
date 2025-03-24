@@ -1,11 +1,11 @@
 import { EnterMessage, ObjectStringItem, RoleType } from '@coze/api';
 import { isEmpty, map } from 'lodash';
-import type { ChatMessage } from '~/types/coze';
+import { FileInfo } from '~/types';
 
 // 将用户输入转换为多模态 EnterMessage
 export function convertInputToEnterMessage(
 	message: string,
-	fileList?: any[]
+	fileList?: FileInfo[]
 ): EnterMessage[] {
 	// 纯文本消息
 	if (isEmpty(fileList)) {
@@ -21,7 +21,7 @@ export function convertInputToEnterMessage(
 	// 多模态消息
 	const contents: ObjectStringItem[] = map(fileList, ({ object_type, id }) => {
 		return {
-			type: object_type,
+			type: object_type as any,
 			file_id: id,
 		};
 	});
@@ -56,49 +56,6 @@ export function formatAdditionalMessages(
 		}
 		return item;
 	});
-}
-
-/**
- * 解析多条 json 拼接的 str
- * @param jsonStr
- * @returns jsonArr
- */
-export function parseMultiJson(jsonStr: string): ChatMessage[] {
-	const jsonArr = [];
-	let startIndex = 0;
-	let endIndex = 0;
-
-	console.log('--- jsonStr', jsonStr);
-
-	while (startIndex < jsonStr.length) {
-		// 找到一个 JSON 对象的开始位置
-		startIndex = jsonStr.indexOf('{', startIndex);
-		if (startIndex === -1) {
-			break;
-		}
-
-		// 找到一个 JSON 对象的结束位置
-		let openBrackets = 1;
-		endIndex = startIndex + 1;
-		while (openBrackets > 0 && endIndex < jsonStr.length) {
-			if (jsonStr[endIndex] === '{') {
-				openBrackets++;
-			} else if (jsonStr[endIndex] === '}') {
-				openBrackets--;
-			}
-			endIndex++;
-		}
-
-		// 将该 JSON 对象解析为一个对象，并添加到数组中
-		const json = jsonStr.substring(startIndex, endIndex);
-		console.log('--- json', json);
-		jsonArr.push(JSON.parse(json));
-
-		// 更新下一个 JSON 对象的开始位置
-		startIndex = endIndex;
-	}
-
-	return jsonArr;
 }
 
 // 判断是否在 chrome 扩展中运行

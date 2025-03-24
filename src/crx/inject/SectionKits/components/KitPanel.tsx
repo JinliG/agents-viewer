@@ -11,7 +11,8 @@ import LoadingDots from '~/components/LoadingDots';
 import { Button } from 'antd';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { ChatV3Message } from '@coze/api';
+import { StreamMessage } from '~/hooks/useStreamHandler';
+import { CrxMessageTypesMap, CrxSourceMap } from '~/crx/types';
 
 const StyledDiv = styled.div`
 	min-width: 360px;
@@ -66,7 +67,7 @@ interface KitPanelProps {
 	processing: boolean;
 	selectionText: string;
 	feature: SectionFeature;
-	results: ChatV3Message[];
+	streamMessages: StreamMessage[];
 	onClose: () => void;
 }
 
@@ -74,15 +75,22 @@ const KitPanel: React.FC<KitPanelProps> = ({
 	feature,
 	onClose,
 	selectionText,
-	results,
+	streamMessages,
 	processing,
 }) => {
-	const { label } = feature;
+	const { label, customRender } = feature;
 
 	const resultText = useMemo(
-		() => map(results, (item) => item.content).join(''),
-		[results]
+		() => map(streamMessages, (item) => item.content).join(''),
+		[streamMessages]
 	);
+
+	const openSiderPanel = () => {
+		chrome.runtime.sendMessage({
+			type: CrxMessageTypesMap.OPEN_SIDE_PANEL,
+			source: CrxSourceMap.INJECT,
+		});
+	};
 
 	return (
 		<StyledDiv>
@@ -95,6 +103,8 @@ const KitPanel: React.FC<KitPanelProps> = ({
 				<div className='result-text'>
 					{processing ? (
 						<LoadingDots />
+					) : customRender ? (
+						customRender(resultText, streamMessages)
 					) : (
 						<Markdown remarkPlugins={[remarkGfm]}>{resultText}</Markdown>
 					)}
@@ -114,6 +124,7 @@ const KitPanel: React.FC<KitPanelProps> = ({
 						style={{
 							fontSize: 12,
 						}}
+						onClick={openSiderPanel}
 					>
 						在聊天中继续
 					</Button>

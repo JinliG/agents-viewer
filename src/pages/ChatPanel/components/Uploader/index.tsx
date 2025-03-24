@@ -2,8 +2,7 @@ import * as React from 'react';
 import { Upload } from 'antd';
 import { uploadFile } from '~/network/coze';
 import { toast } from 'react-toastify';
-import { FileInfo } from '~/types/coze';
-import { MultiModalType } from '~/types';
+import { ObjectStringType, FileInfo } from '~/types';
 
 const allowedFileTypes = [
 	'.doc',
@@ -64,18 +63,18 @@ const Uploader: React.FC<UploaderProps> = ({ children, onUploadSuccess }) => {
 		}
 	};
 
-	const customRequest = (options: any) => {
+	const customRequest = (options) => {
 		uploadFile(options.file)
 			.then((response) => {
 				if (response.data) {
-					const { type } = options.file as File;
-					const object_type: MultiModalType = type
+					const { type } = options.file;
+					// 文件类型控制
+					const object_type: ObjectStringType = type
 						?.toLocaleLowerCase()
 						?.startsWith('image/')
 						? 'image'
 						: 'file';
 					onUploadSuccess?.({
-						type,
 						object_type,
 						...response.data,
 					});

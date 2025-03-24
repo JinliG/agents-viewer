@@ -1,5 +1,4 @@
-import { Message } from 'ai/react';
-import { FileInfo } from './coze';
+import { ObjectStringItem } from '@coze/api';
 
 /**
  * 当 role=assistant 时，用于标识 Bot 的消息类型，取值：
@@ -17,19 +16,32 @@ import { FileInfo } from './coze';
 // 	Verbose = 'verbose',
 // }
 
-export enum BotMessageRole {
-	Assistant = 'assistant',
-	User = 'user',
-}
-export type MultiModalType = 'file' | 'image';
+export type ObjectStringType = Pick<ObjectStringItem, 'type'>['type'];
 
 // 多模态
 export interface MultiModal extends FileInfo {
 	url?: string;
 }
 
-// 应用内消息类型
-export interface BotMessage extends Message {
-	role: BotMessageRole;
-	multiModal?: MultiModal;
+export interface FileInfo {
+	/**
+	 * 已上传的文件 ID。
+	 */
+	id: string;
+	/**
+	 * 文件的总字节数。
+	 */
+	bytes: number;
+	/**
+	 * 文件的上传时间，格式为 10 位的 Unixtime 时间戳，单位为秒（s）。
+	 */
+	created_at: number;
+	/**
+	 * 文件名称。
+	 */
+	file_name: string;
+	/**
+	 * 文件类型。
+	 */
+	object_type: ObjectStringType;
 }

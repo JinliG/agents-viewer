@@ -33,7 +33,6 @@ export function Injects(): React.ReactElement {
 			} as CrxMessageRequest,
 			(response: GlobalOptions) => {
 				if (response) {
-					console.log('--- kit options', response);
 					setFloatKitOptions(response.floatKit);
 					setSectionKitOptions(response.sectionKit);
 				}

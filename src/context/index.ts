@@ -2,7 +2,7 @@ import React from 'react';
 import { IAgent } from './AgentsContextProvider';
 import { IUserInfo } from './AuthContextProvider';
 import { isChromeExtension } from '~/utils';
-import { ChatV3Message } from '@coze/api';
+import { StreamMessage } from '~/hooks/useStreamHandler';
 
 /**
  * because of vite issue(https://github.com/vitejs/vite/issues/3301)
@@ -39,7 +39,7 @@ export interface AgentsContextProps {
 	loading: boolean;
 	setCurrent: (iAgent: IAgent) => void;
 	setAgents: React.Dispatch<React.SetStateAction<IAgent[]>>;
-	updateAgentMessages: (botId: string, messages: ChatV3Message[]) => void;
+	updateAgentMessages: (botId: string, messages: StreamMessage[]) => void;
 }
 export const agentsInitState: AgentsContextProps = {
 	loading: false,

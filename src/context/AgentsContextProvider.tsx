@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { getBotList } from '~/network/coze';
 import ChatPanel from '~/pages/ChatPanel';
 import { AgentsContext } from '.';
-import { ChatV3Message } from '@coze/api';
+import { StreamMessage } from '~/hooks/useStreamHandler';
 
 export interface IAgent {
 	key: string;
@@ -13,7 +13,7 @@ export interface IAgent {
 	botId?: string;
 	botAvatar?: string;
 	active?: boolean;
-	messages?: ChatV3Message[];
+	messages?: StreamMessage[];
 	Comp: (props?: any) => React.JSX.Element;
 }
 
@@ -50,7 +50,7 @@ const AgentsContextProvider: React.FC<any> = ({ children }) => {
 			});
 	}, []);
 
-	const updateAgentMessages = (botId: string, messages: ChatV3Message[]) => {
+	const updateAgentMessages = (botId: string, messages: StreamMessage[]) => {
 		setAgents((prev) => {
 			const newAgents = [...prev];
 			const agentIndex = newAgents.findIndex((item) => item.botId === botId);

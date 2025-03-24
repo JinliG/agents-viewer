@@ -74,17 +74,10 @@ const FloatKits: React.FC<any> = () => {
 	const [translating, setTranslating] = useState(false);
 
 	const onClickEntry = () => {
-		chrome.runtime.sendMessage(
-			{
-				type: CrxMessageTypesMap.OPEN_SIDE_PANEL,
-				source: CrxSourceMap.INJECT,
-			},
-			(response) => {
-				if (response?.success) {
-					console.log('--- ');
-				}
-			}
-		);
+		chrome.runtime.sendMessage({
+			type: CrxMessageTypesMap.OPEN_SIDE_PANEL,
+			source: CrxSourceMap.INJECT,
+		});
 	};
 
 	const injectTransNodeStyle = () => {

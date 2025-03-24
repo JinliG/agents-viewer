@@ -5,12 +5,16 @@ import { useMemo, useState } from 'react';
 import { useAuthContext } from '~/context/AuthContextProvider';
 import { useAgentsContext } from '~/context/AgentsContextProvider';
 import Markdown from 'react-markdown';
+import remarkParse from 'remark-parse';
+import rehypeHighlight from 'rehype-highlight';
+import 'highlight.js/styles/default.css';
 
 import styles from './index.module.less';
 import remarkGfm from 'remark-gfm';
 import LoadingDots from '~/components/LoadingDots';
 import { FileCard } from '../..';
-import { ChatV3Message, RoleType } from '@coze/api';
+import { RoleType } from '@coze/api';
+import { StreamMessage } from '~/hooks/useStreamHandler';
 
 /**
  * 支持的格式
@@ -21,7 +25,7 @@ import { ChatV3Message, RoleType } from '@coze/api';
 interface BubbleProps {
 	id: string;
 	role: RoleType;
-	messages: ChatV3Message[];
+	messages: StreamMessage[];
 }
 interface ChatMessageBubbleProps {
 	bubble?: BubbleProps;
@@ -113,7 +117,8 @@ function ChatMessageBubble(props: ChatMessageBubbleProps) {
 			)}
 			<Markdown
 				className={styles.markdown}
-				remarkPlugins={[remarkGfm]}
+				remarkPlugins={[remarkGfm, remarkParse]}
+				rehypePlugins={[rehypeHighlight]}
 				components={{
 					img: CustomImg,
 				}}
@@ -125,12 +130,12 @@ function ChatMessageBubble(props: ChatMessageBubbleProps) {
 }
 
 interface ChatMessageProps {
-	chatMessages: ChatV3Message[];
+	streamMessages: StreamMessage[];
 	isWaitingAnswer: boolean;
 }
 
 export default function ChatMessages(props: ChatMessageProps) {
-	const { chatMessages: streamMessages, isWaitingAnswer } = props;
+	const { streamMessages, isWaitingAnswer } = props;
 
 	const bubbleList = useMemo<Array<BubbleProps>>(() => {
 		const list: Array<BubbleProps> = [];
