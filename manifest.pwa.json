@@ -1,7 +1,7 @@
 {
-	"name": "DEV | Agents Viewer(Provide professional, vertical agent services)",
+	"name": "Agents Viewer(Provide professional agent services)",
 	"short_name": "Agents Viewer",
-	"description": "DEV | Agents Viewer(Provide professional, vertical agent services)",
+	"description": "Agents Viewer(Provide professional agent services)",
 	"theme_color": "#242424",
 	"background_color": "#ffffff",
 	"scope": "/",
