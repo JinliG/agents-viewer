@@ -4,7 +4,7 @@ import {
 	EnterMessage,
 	Conversation,
 	MetaDataType,
-	BotInfo,
+	SimpleBot,
 } from '@coze/api';
 import { FileInfo } from '~/types';
 
@@ -52,7 +52,7 @@ const { get, post } = createAxiosInstance(cozeBase, {
  * @returns
  */
 export const getBotList = () => {
-	return get<CozeAPIResponse<{ space_bots: BotInfo[]; total: number }>>(
+	return get<CozeAPIResponse<{ space_bots: SimpleBot[]; total: number }>>(
 		'/v1/space/published_bots_list',
 		{
 			space_id: import.meta.env.VITE_COZE_SPACE_ID,
