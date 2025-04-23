@@ -30,7 +30,8 @@
 		{
 			"matches": [
 				"http://*/*",
-				"https://developer.mozilla.org/*"
+				"https://*/**",
+				"<all_urls>"
 			],
 			"js": [
 				"./src/crx/content.tsx"

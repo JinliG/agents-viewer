@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { GoogleCircleFilled, TranslationOutlined } from '@ant-design/icons';
+import { AliwangwangOutlined, TranslationOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import { CrxMessageTypesMap, CrxSourceMap } from '~/crx/types';
 import {
@@ -148,7 +148,7 @@ const FloatKits: React.FC<any> = () => {
 					shape='circle'
 					className='mainEntry'
 					onClick={onClickEntry}
-					icon={<GoogleCircleFilled className='icon' />}
+					icon={<AliwangwangOutlined className='icon' />}
 				/>
 				<MarkersWrapper
 					className={expanded || translating ? 'visible' : ''}
