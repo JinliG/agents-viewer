@@ -1,4 +1,4 @@
-<h1 align="center">
+<h1 align="center" style="border-bottom:unset">
 
   <a href="https://github.com/JinliG/agents-viewer/releases">
 
@@ -8,9 +8,15 @@
 
 </h1>
 
+</br>
+
+
 ## Agents-Viewer
 
 agents-viewer 是一个基于 Coze API 服务的 AI Agent 客户端工具，支持 Chrome 插件 & Web 两种部署方式。
+
+
+https://github.com/user-attachments/assets/39bbec15-b7e2-4d6c-a2ca-09262fded74b
 
 
 
@@ -18,6 +24,7 @@ agents-viewer 是一个基于 Coze API 服务的 AI Agent 客户端工具，支�
 
 - 浏览器插件 网页划词、翻译、续写、全局翻译，支持自定义划词提示词
 - 完善的 markdown 格式渲染
+- 通过在 Coze 上搭建 Agent，然后快速接入到客户端提供服务
 
 
 
